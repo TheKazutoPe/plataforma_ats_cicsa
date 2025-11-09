@@ -166,12 +166,6 @@
       touch-action: none;
     }
 
-    @media (min-width: 768px) {
-      canvas.sig {
-        height: 160px;
-      }
-    }
-
     .foto-preview {
       max-width: 100%;
       border-radius: 10px;
@@ -299,7 +293,7 @@
       </a>
     </div>
 
-    <!-- ✅ Mensaje de éxito si existe -->
+    <!-- Mensaje de éxito -->
     {% if mensaje %}
       <div class="alert alert-success" role="alert">
         {{ mensaje }}
@@ -320,9 +314,7 @@
     </div>
 
     <form method="POST" enctype="multipart/form-data" id="formATS">
-      <!-- todo tu formulario igual que antes: fechas, trabajo, charlas, tecnicos, fotos, firmas, riesgos, etc -->
-
-      <!-- FECHA / HORAS -->
+      <!-- DATOS JORNADA -->
       <div class="section-label"><span class="icon"></span>Datos de la jornada</div>
       <div class="row g-2">
         <div class="col-12 col-md-4">
@@ -362,7 +354,7 @@
         </div>
       </div>
 
-      <!-- CHARLAS PROGRAMADAS -->
+      <!-- CHARLA -->
       <div class="section-label"><span class="icon"></span>Charla programada</div>
       <div class="row g-2">
         <div class="col-12 col-md-8">
@@ -375,11 +367,12 @@
         </div>
         <div class="col-12 col-md-4">
           <label class="form-label">Expositor</label>
-          <input type="text" id="expositor_charla" class="form-control" value="{% if charlas and charlas[0] %}{{ charlas[0].expositor }}{% endif %}" readonly />
+          <input type="text" id="expositor_charla" class="form-control"
+                 value="{% if charlas and charlas[0] %}{{ charlas[0].expositor }}{% endif %}" readonly />
         </div>
       </div>
 
-      <!-- SUPERVISOR CICSA -->
+      <!-- SUPERVISOR -->
       <div class="section-label"><span class="icon"></span>Supervisor CICSA</div>
       <div class="row g-2 mb-1">
         <div class="col-12 col-md-6">
@@ -402,6 +395,7 @@
       {% for i in [1,2,3] %}
       <div class="tecnico-card">
         <div class="tecnico-title">Técnico {{ i }} {% if i == 1 %}(principal){% else %}(opcional){% endif %}</div>
+
         <div class="row g-2 align-items-end">
           <div class="col-12 col-md-6">
             <label class="form-label">Seleccionar técnico</label>
@@ -440,7 +434,7 @@
           </div>
         </div>
 
-        <!-- FOTO INDIVIDUAL DEL TÉCNICO CON EPP -->
+        <!-- FOTO INDIVIDUAL -->
         <div class="mt-2">
           <label class="form-label">Foto Técnico {{ i }} con EPP</label>
           <input
@@ -455,7 +449,7 @@
           <div class="hint">Tomar foto individual del técnico con su EPP completo.</div>
         </div>
 
-        <!-- Firma -->
+        <!-- FIRMA -->
         <div class="mt-2">
           <label class="form-label">Firma Técnico {{ i }}</label>
           <canvas id="sig{{ i }}" class="sig"></canvas>
@@ -549,29 +543,27 @@
     syncExpositor();
   }
 
-  // Firmas
+  // Configurar canvas de firmas (sin borrarse en cada resize)
   function setupSig(idx) {
     const canvas = document.getElementById("sig" + idx);
     const hidden = document.getElementById("firma" + idx);
     if (!canvas || !hidden) return;
     const ctx = canvas.getContext("2d");
 
-    function resizeCanvas() {
+    function initCanvas() {
       const ratio = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
       const width = Math.max(260, rect.width) * ratio;
-      const height = (rect.height || 140) * ratio;
+      const height = 140 * ratio; // alto fijo
       canvas.width = width;
       canvas.height = height;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       ctx.lineWidth = 2;
       ctx.lineCap = "round";
       ctx.strokeStyle = "#000";
-      ctx.clearRect(0, 0, width, height);
     }
 
-    resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
+    initCanvas(); // sólo una vez
 
     let drawing = false;
     let lastX = 0;
@@ -582,7 +574,10 @@
       const touch = e.touches ? e.touches[0] : null;
       const clientX = touch ? touch.clientX : e.clientX;
       const clientY = touch ? touch.clientY : e.clientY;
-      return { x: clientX - rect.left, y: clientY - rect.top };
+      return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+      };
     }
 
     function start(e) {
@@ -615,10 +610,12 @@
     canvas.addEventListener("mousemove", move);
     canvas.addEventListener("mouseup", end);
     canvas.addEventListener("mouseleave", end);
+
     canvas.addEventListener("touchstart", start, { passive: false });
     canvas.addEventListener("touchmove", move, { passive: false });
     canvas.addEventListener("touchend", end);
 
+    // Si envían y no se guardó aún, lo guardamos
     document.getElementById("formATS").addEventListener("submit", function () {
       if (!hidden.value) {
         hidden.value = canvas.toDataURL("image/png");
@@ -626,6 +623,7 @@
     });
   }
 
+  // Limpiar firma
   function clearSig(i) {
     const c = document.getElementById("sig" + i);
     const h = document.getElementById("firma" + i);
@@ -634,8 +632,6 @@
     ctx.clearRect(0, 0, c.width, c.height);
     h.value = "";
   }
-
-  [1, 2, 3].forEach(setupSig);
 
   // Preview foto por técnico
   function previewFotoTec(e, i) {
@@ -650,6 +646,10 @@
     }
   }
 
+  // Inicializar firmas
+  [1, 2, 3].forEach(setupSig);
+
+  // Exponer funciones usadas en HTML
   window.clearSig = clearSig;
   window.previewFotoTec = previewFotoTec;
 </script>

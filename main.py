@@ -29,19 +29,13 @@ os.makedirs("temp", exist_ok=True)
 os.makedirs("pdf", exist_ok=True)
 
 
-# =========================
-# HELPERS
-# =========================
 def get_user():
     return session.get("usuario")
 
 
-# =========================
-# RUTA RAÍZ
-# =========================
 @app.route("/")
 def index():
-    # Siempre comienza por login
+    # Redirige siempre al login
     return redirect(url_for("login"))
 
 
@@ -173,7 +167,7 @@ def formulario():
             riesgos.append(riesgo_otro)
         data["riesgos"] = riesgos
 
-        # ===== Técnicos (1..3) con firma + foto individual =====
+        # ===== Técnicos (1..3) con firma y foto individual =====
         tecnicos_post = []
 
         for i in (1, 2, 3):
@@ -198,25 +192,31 @@ def formulario():
                 "obs": (request.form.get(f"obs{i}", "") or "").strip(),
             }
 
-            # Firma (canvas base64)
+            # Firma desde canvas
             firma_b64 = request.form.get(f"firma{i}")
             fila["firma_path"] = None
             if firma_b64 and "base64" in firma_b64:
                 try:
                     raw = firma_b64.split(",")[-1]
-                    firma_path = os.path.join("temp", f"firma_tec{i}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
+                    firma_path = os.path.join(
+                        "temp",
+                        f"firma_tec{i}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png",
+                    )
                     with open(firma_path, "wb") as out:
                         out.write(base64.b64decode(raw))
                     fila["firma_path"] = firma_path
                 except Exception as e:
                     print(f"Error guardando firma técnico {i}:", e)
 
-            # Foto individual del técnico con EPP
+            # Foto individual técnico con EPP
             foto_file = request.files.get(f"foto_tec{i}")
             fila["foto_path"] = None
             if foto_file and foto_file.filename:
                 try:
-                    foto_path = os.path.join("temp", f"foto_tec{i}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg")
+                    foto_path = os.path.join(
+                        "temp",
+                        f"foto_tec{i}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg",
+                    )
                     foto_file.save(foto_path)
                     fila["foto_path"] = foto_path
                 except Exception as e:
@@ -231,7 +231,10 @@ def formulario():
         data["foto_path"] = None
         if foto_general and foto_general.filename:
             try:
-                foto_path = os.path.join("temp", f"foto_general_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg")
+                foto_path = os.path.join(
+                    "temp",
+                    f"foto_general_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg",
+                )
                 foto_general.save(foto_path)
                 data["foto_path"] = foto_path
             except Exception as e:
@@ -241,7 +244,7 @@ def formulario():
         pdf_path = generar_pdf(data)
         pdf_name = os.path.basename(pdf_path)
 
-        # ===== Enviar correo =====
+        # ===== Enviar correo (NO rompe si falla) =====
         try:
             supervisor = data.get("supervisor", "SIN SUPERVISOR")
             fecha_actual = datetime.now().strftime("%Y-%m-%d")
@@ -251,7 +254,7 @@ def formulario():
         except Exception as e:
             print("⚠️ Error al enviar correo:", e)
 
-        # ===== Subir a OneDrive =====
+        # ===== Subir a OneDrive (NO rompe si falla) =====
         try:
             brigada_usuario = (user.get("brigada") or "SIN BRIGADA").upper()
             fecha_actual = datetime.now().strftime("%Y-%m-%d")
@@ -259,7 +262,7 @@ def formulario():
         except Exception as e:
             print("⚠️ Error al subir a OneDrive:", e)
 
-        # ===== Registrar cumplimiento diario en Supabase =====
+        # ===== Registrar cumplimiento diario en Supabase (NO rompe si falla) =====
         try:
             fecha_reg = data["fecha_dia"]
             brigada_reg = data.get("brigada_usuario")
@@ -269,7 +272,6 @@ def formulario():
             supervisor_reg = data.get("supervisor")
             tecnicos_count = len(tecnicos_post)
 
-            # Marca completado = True para esa brigada / fecha / contrata
             registro = {
                 "fecha": fecha_reg,
                 "brigada": brigada_reg,
@@ -283,12 +285,12 @@ def formulario():
 
             supabase.table("ats_registros_diarios").upsert(
                 registro,
-                on_conflict="fecha,brigada,contrata"
+                on_conflict="fecha,brigada,contrata",
             ).execute()
         except Exception as e:
             print("⚠️ Error registrando ATS diario en Supabase:", e)
 
-        # Mensaje en la misma página
+        # ===== Responder al usuario =====
         mensaje = "Reporte generado, enviado y registrado correctamente."
         return render_template(
             "formulario.html",
@@ -324,7 +326,7 @@ def logout():
 
 
 # =========================
-# MAIN
+# MAIN LOCAL
 # =========================
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
