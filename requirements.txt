@@ -1,4 +1,10 @@
-flask
+Flask
+gunicorn
+python-dotenv
 supabase
 reportlab
-python-dotenv
+requests
+msal
+google-auth
+google-auth-oauthlib
+google-api-python-client
