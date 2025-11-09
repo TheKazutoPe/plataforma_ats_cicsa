@@ -248,15 +248,17 @@ def formulario():
         pdf_path = generar_pdf(data)
         pdf_name = os.path.basename(pdf_path)
 
-        # ===== Enviar correo con PDF =====
+        # ===== Enviar correo con PDF (usando el retorno para el mensaje) =====
+        email_ok = False
         try:
             supervisor = data.get("supervisor", "SIN SUPERVISOR")
             fecha_actual = datetime.now().strftime("%Y-%m-%d")
             brigada_usuario = (user.get("brigada") or "SIN BRIGADA").upper()
             subject = f"Reporte ATS – {supervisor} – {brigada_usuario} – {fecha_actual}"
-            enviar_correo(pdf_path, supervisor, subject)
+            email_ok = enviar_correo(pdf_path, supervisor, subject)
         except Exception as e:
-            print("⚠️ Error al enviar correo:", e)
+            print("⚠️ Error al enviar correo (controlado):", e)
+            email_ok = False
 
         # ===== Subir PDF a Supabase Storage =====
         pdf_storage_path = None
@@ -271,7 +273,6 @@ def formulario():
                 brigada_reg = (data.get("brigada") or "SIN_BRIGADA").replace(" ", "_")
                 pdf_storage_path = f"ats/{fecha_reg}/{brigada_reg}/{pdf_name}"
 
-                # upload (si existe el archivo con el mismo nombre, se recomienda configurar upsert en el bucket)
                 supabase.storage.from_(PDF_BUCKET).upload(pdf_storage_path, file_bytes)
 
                 try:
@@ -304,7 +305,7 @@ def formulario():
                 "supervisor": supervisor_reg,
                 "tecnicos_count": tecnicos_count,
                 "completado": True,
-                # Si luego agregas columnas para el PDF, aquí las envías:
+                # Descomenta si agregaste columnas en la tabla:
                 # "pdf_path": pdf_storage_path,
                 # "pdf_url": pdf_public_url,
             }
@@ -316,8 +317,12 @@ def formulario():
         except Exception as e:
             print("⚠️ Error registrando ATS diario en Supabase:", e)
 
-        # ===== Responder al usuario en la plataforma =====
-        mensaje = "✅ Reporte ATS generado, enviado por correo y registrado correctamente."
+        # ===== Mensaje en la plataforma =====
+        if email_ok:
+            mensaje = "✅ Reporte ATS generado, enviado por correo y registrado correctamente."
+        else:
+            mensaje = "⚠️ Reporte ATS generado y registrado en la plataforma. No se pudo enviar el correo automático (revisar configuración SMTP)."
+
         return render_template(
             "formulario.html",
             datos=user,
