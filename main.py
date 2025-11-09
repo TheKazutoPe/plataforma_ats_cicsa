@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, send_file, session, url_for
+from flask import Flask, render_template, request, redirect, session, url_for
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from datetime import datetime
@@ -6,7 +6,6 @@ import base64
 import os
 
 from generate_pdf import generar_pdf
-from storage_onedrive import subir_a_onedrive
 from email_sender import enviar_correo
 
 # =========================
@@ -25,8 +24,10 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# Bucket donde se guardarán los PDFs (crearlo en Supabase)
+PDF_BUCKET = os.getenv("SUPABASE_PDF_BUCKET", "ats_pdfs")
+
 os.makedirs("temp", exist_ok=True)
-os.makedirs("pdf", exist_ok=True)
 
 
 def get_user():
@@ -35,7 +36,6 @@ def get_user():
 
 @app.route("/")
 def index():
-    # Redirige siempre al login
     return redirect(url_for("login"))
 
 
@@ -123,7 +123,9 @@ def formulario():
         data = {}
 
         # ===== Datos generales =====
-        data["fecha_dia"] = request.form.get("fecha_dia") or datetime.now().strftime("%Y-%m-%d")
+        data["fecha_dia"] = request.form.get("fecha_dia") or datetime.now().strftime(
+            "%Y-%m-%d"
+        )
         data["hora_inicio"] = request.form.get("hora_inicio", "")
         data["hora_fin"] = request.form.get("hora_fin", "")
 
@@ -155,7 +157,9 @@ def formulario():
         )
         if charla_sel:
             data["tema_charla"] = charla_sel.get("tema", "")
-            data["expositor_charla"] = charla_sel.get("expositor", "") or expositor_manual
+            data["expositor_charla"] = (
+                charla_sel.get("expositor", "") or expositor_manual
+            )
         else:
             data["tema_charla"] = charla_item or ""
             data["expositor_charla"] = expositor_manual
@@ -208,7 +212,7 @@ def formulario():
                 except Exception as e:
                     print(f"Error guardando firma técnico {i}:", e)
 
-            # Foto individual técnico con EPP
+            # Foto individual técnico
             foto_file = request.files.get(f"foto_tec{i}")
             fila["foto_path"] = None
             if foto_file and foto_file.filename:
@@ -244,7 +248,7 @@ def formulario():
         pdf_path = generar_pdf(data)
         pdf_name = os.path.basename(pdf_path)
 
-        # ===== Enviar correo (NO rompe si falla) =====
+        # ===== Enviar correo con PDF =====
         try:
             supervisor = data.get("supervisor", "SIN SUPERVISOR")
             fecha_actual = datetime.now().strftime("%Y-%m-%d")
@@ -254,15 +258,34 @@ def formulario():
         except Exception as e:
             print("⚠️ Error al enviar correo:", e)
 
-        # ===== Subir a OneDrive (NO rompe si falla) =====
+        # ===== Subir PDF a Supabase Storage =====
+        pdf_storage_path = None
+        pdf_public_url = None
         try:
-            brigada_usuario = (user.get("brigada") or "SIN BRIGADA").upper()
-            fecha_actual = datetime.now().strftime("%Y-%m-%d")
-            subir_a_onedrive(pdf_path, brigada_usuario, fecha_actual)
-        except Exception as e:
-            print("⚠️ Error al subir a OneDrive:", e)
+            if os.path.isfile(pdf_path):
+                with open(pdf_path, "rb") as f:
+                    file_bytes = f.read()
 
-        # ===== Registrar cumplimiento diario en Supabase (NO rompe si falla) =====
+                # Ruta organizada por fecha y brigada
+                fecha_reg = data.get("fecha_dia") or datetime.now().strftime("%Y-%m-%d")
+                brigada_reg = (data.get("brigada") or "SIN_BRIGADA").replace(" ", "_")
+                pdf_storage_path = f"ats/{fecha_reg}/{brigada_reg}/{pdf_name}"
+
+                # upload (si existe el archivo con el mismo nombre, se recomienda configurar upsert en el bucket)
+                supabase.storage.from_(PDF_BUCKET).upload(pdf_storage_path, file_bytes)
+
+                try:
+                    pdf_public_url = supabase.storage.from_(PDF_BUCKET).get_public_url(
+                        pdf_storage_path
+                    )
+                except Exception:
+                    pdf_public_url = None
+            else:
+                print("⚠️ PDF no encontrado para subir a Supabase Storage:", pdf_path)
+        except Exception as e:
+            print("⚠️ Error al subir PDF a Supabase Storage:", e)
+
+        # ===== Registrar cumplimiento diario en ats_registros_diarios =====
         try:
             fecha_reg = data["fecha_dia"]
             brigada_reg = data.get("brigada_usuario")
@@ -281,6 +304,9 @@ def formulario():
                 "supervisor": supervisor_reg,
                 "tecnicos_count": tecnicos_count,
                 "completado": True,
+                # Si luego agregas columnas para el PDF, aquí las envías:
+                # "pdf_path": pdf_storage_path,
+                # "pdf_url": pdf_public_url,
             }
 
             supabase.table("ats_registros_diarios").upsert(
@@ -290,30 +316,18 @@ def formulario():
         except Exception as e:
             print("⚠️ Error registrando ATS diario en Supabase:", e)
 
-        # ===== Responder al usuario =====
-        mensaje = "Reporte generado, enviado y registrado correctamente."
+        # ===== Responder al usuario en la plataforma =====
+        mensaje = "✅ Reporte ATS generado, enviado por correo y registrado correctamente."
         return render_template(
             "formulario.html",
             datos=user,
             tecnicos=tecnicos,
             charlas=charlas,
             mensaje=mensaje,
-            pdf_filename=pdf_name,
         )
 
     # GET
     return render_template("formulario.html", datos=user, tecnicos=tecnicos, charlas=charlas)
-
-
-# =========================
-# DESCARGA PDF POR NOMBRE
-# =========================
-@app.route("/descargar/<path:filename>")
-def descargar_pdf(filename):
-    file_path = os.path.join("pdf", filename)
-    if not os.path.isfile(file_path):
-        return "Archivo no encontrado", 404
-    return send_file(file_path, as_attachment=True)
 
 
 # =========================

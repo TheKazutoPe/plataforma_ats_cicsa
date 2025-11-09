@@ -297,12 +297,6 @@
     {% if mensaje %}
       <div class="alert alert-success" role="alert">
         {{ mensaje }}
-        {% if pdf_filename %}
-          <br>
-          <a href="{{ url_for('descargar_pdf', filename=pdf_filename) }}" class="alert-link">
-            Descargar PDF generado
-          </a>
-        {% endif %}
       </div>
     {% endif %}
 
@@ -543,7 +537,7 @@
     syncExpositor();
   }
 
-  // Configurar canvas de firmas (sin borrarse en cada resize)
+  // Configurar canvas de firmas
   function setupSig(idx) {
     const canvas = document.getElementById("sig" + idx);
     const hidden = document.getElementById("firma" + idx);
@@ -554,7 +548,7 @@
       const ratio = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
       const width = Math.max(260, rect.width) * ratio;
-      const height = 140 * ratio; // alto fijo
+      const height = 140 * ratio;
       canvas.width = width;
       canvas.height = height;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -563,7 +557,7 @@
       ctx.strokeStyle = "#000";
     }
 
-    initCanvas(); // sólo una vez
+    initCanvas();
 
     let drawing = false;
     let lastX = 0;
@@ -615,7 +609,6 @@
     canvas.addEventListener("touchmove", move, { passive: false });
     canvas.addEventListener("touchend", end);
 
-    // Si envían y no se guardó aún, lo guardamos
     document.getElementById("formATS").addEventListener("submit", function () {
       if (!hidden.value) {
         hidden.value = canvas.toDataURL("image/png");

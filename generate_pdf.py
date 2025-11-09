@@ -266,16 +266,15 @@ def generar_pdf(data: dict) -> str:
     tabla_part = Table(
         filas,
         colWidths=[
-            0.7 * cm,      # Item
-            6.0 * cm,      # Nombre
-            2.0 * cm,      # Cargo
-            2.0 * cm,      # DNI
-            # 12 EPP verticales
+            0.7 * cm,
+            6.0 * cm,
+            2.0 * cm,
+            2.0 * cm,
             0.7 * cm, 0.7 * cm, 0.7 * cm, 0.7 * cm,
             0.7 * cm, 0.7 * cm, 0.7 * cm, 0.7 * cm,
             0.7 * cm, 0.7 * cm, 0.7 * cm, 0.7 * cm,
-            4.3 * cm,      # Observaciones
-            4.3 * cm,      # Firma
+            4.3 * cm,
+            4.3 * cm,
         ],
         repeatRows=1,
     )
@@ -306,7 +305,6 @@ def generar_pdf(data: dict) -> str:
             P("EXPOSITOR", True, nowrap=True),
             P(expositor_charla, False, 7, "LEFT"),
         ],
-        # Fila ATS combinada
         [
             P("ANALISIS DE TRABAJO SEGURO (ATS)", True, 7, "CENTER"),
             "", "", "",
@@ -321,7 +319,7 @@ def generar_pdf(data: dict) -> str:
 
     charla_tbl = Table(
         charla_data,
-        colWidths=[6.0 * cm, 10.0 * cm, 4.0 * cm, 7.7 * cm],  # total 27.7
+        colWidths=[6.0 * cm, 10.0 * cm, 4.0 * cm, 7.7 * cm],
     )
     charla_tbl.setStyle(
         TableStyle(
@@ -330,7 +328,6 @@ def generar_pdf(data: dict) -> str:
                 ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.black),
                 ("BACKGROUND", (0, 0), (-1, -1), GRIS),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                # Combinar celda ATS en fila 1 (segunda fila)
                 ("SPAN", (0, 1), (-1, 1)),
                 ("ALIGN", (0, 1), (-1, 1), "CENTER"),
             ]
@@ -379,7 +376,6 @@ def generar_pdf(data: dict) -> str:
             ]
         )
 
-    # 1.0 + 8.5 + 4.0 + 4.0 + 8.4 + 0.6 + 0.6 + 0.6 = 27.7
     matriz = Table(
         filas_r,
         colWidths=[
@@ -434,7 +430,7 @@ def generar_pdf(data: dict) -> str:
     story.append(rec_tabla)
 
     # ========= ESPACIO PARA FIRMAS =========
-    story.append(Spacer(1, 18))  # espacio para firmas manuscritas
+    story.append(Spacer(1, 18))
 
     firmas = Table(
         [
@@ -444,7 +440,7 @@ def generar_pdf(data: dict) -> str:
                 P("Jefe de Obra /Supervisor CONTRATA/ CICSA PERU", True, 7, "CENTER", AZUL, True),
             ],
         ],
-        colWidths=[13.85 * cm, 13.85 * cm],  # 27.7
+        colWidths=[13.85 * cm, 13.85 * cm],
     )
     firmas.setStyle(
         TableStyle(
@@ -459,10 +455,10 @@ def generar_pdf(data: dict) -> str:
     story.append(firmas)
     story.append(Spacer(1, 3))
 
-    # ========= IMAGEN DEL PERSONAL EN CAMPO CON EPP (1 POR TÉCNICO) =========
+    # ========= IMAGEN DEL PERSONAL EN CAMPO CON EPP =========
     fotos_rows = []
 
-    # Fotos individuales por técnico (si existen)
+    # Fotos individuales por técnico
     for t in tecnicos:
         nombre = t.get("nombre", "")
         fpath = t.get("foto_path")
@@ -474,7 +470,7 @@ def generar_pdf(data: dict) -> str:
                 ]
             )
 
-    # Foto general (compatibilidad) si no hay fotos individuales
+    # Foto general si no hay individuales
     foto_general = data.get("foto_path")
     if not fotos_rows and foto_general and os.path.exists(foto_general):
         for t in tecnicos:
@@ -524,12 +520,10 @@ def generar_pdf(data: dict) -> str:
     # Construir PDF
     doc.build(story)
 
-    # Limpieza temporales (firmas + fotos)
+    # Limpieza temporales
     try:
-        # Foto general
         if foto_general and os.path.exists(foto_general):
             os.remove(foto_general)
-        # Firmas y fotos por técnico
         for t in tecnicos:
             f = t.get("firma_path")
             if f and os.path.exists(f):
