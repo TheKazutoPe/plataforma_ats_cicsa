@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ATS / Charla – CICSA</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Select2 -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+  <!-- jQuery / Select2 -->
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+  <style>
+    :root {
+      --cicsa: #003366;
+      --cicsa-soft: #e6eef7;
+      --bg: #f4f6fa;
+      --radius-card: 18px;
+      --radius-pill: 999px;
+    }
+
+    body {
+      background: var(--bg);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #1f1f1f;
+    }
+
+    .ats-wrapper {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 10px 10px 90px;
+    }
+
+    .card-ats {
+      border-radius: var(--radius-card);
+      border: none;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.06);
+      padding: 18px 14px 18px;
+      background: #ffffff;
+    }
+
+    @media (min-width: 576px) {
+      .card-ats {
+        padding: 24px 22px 24px;
+      }
+    }
+
+    .ats-header {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .ats-logo-img {
+      height: 42px;
+      margin-bottom: 2px;
+      object-fit: contain;
+    }
+
+    .ats-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--cicsa);
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+
+    .ats-subtitle {
+      font-size: 11px;
+      color: #6c757d;
+    }
+
+    .section-label {
+      font-weight: 700;
+      color: var(--cicsa);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: var(--cicsa-soft);
+      padding: 5px 11px;
+      border-radius: var(--radius-pill);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 16px 0 8px;
+    }
+
+    .section-label span.icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--cicsa);
+      display: inline-block;
+    }
+
+    label.form-label {
+      font-weight: 600;
+      color: #222;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .form-control,
+    .form-select {
+      border-radius: 10px;
+      border-color: #d7dce3;
+      font-size: 13px;
+      padding: 8px 10px;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+      box-shadow: 0 0 0 0.15rem rgba(0, 51, 102, 0.18);
+      border-color: var(--cicsa);
+      outline: none;
+    }
+
+    .hint {
+      font-size: 10px;
+      color: #777;
+      margin-top: 2px;
+    }
+
+    .tecnico-card {
+      border-radius: 14px;
+      border: 1px solid #e3e7ee;
+      padding: 10px 9px 10px;
+      margin-bottom: 10px;
+      background: #fafbfe;
+    }
+
+    .tecnico-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--cicsa);
+      margin-bottom: 6px;
+    }
+
+    .form-check-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .form-check-input {
+      width: 14px;
+      height: 14px;
+      margin-top: 0;
+    }
+
+    canvas.sig {
+      border: 1.5px dashed #b9c2d0;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 420px;
+      height: 140px;
+      background: #ffffff;
+      touch-action: none;
+    }
+
+    @media (min-width: 768px) {
+      canvas.sig {
+        height: 160px;
+      }
+    }
+
+    .foto-preview {
+      max-width: 100%;
+      border-radius: 10px;
+      margin-top: 6px;
+      border: 1px solid #e1e5ec;
+    }
+
+    .select2-container {
+      width: 100% !important;
+    }
+
+    .select2-container .select2-selection--single {
+      min-height: 40px;
+      border-radius: 10px;
+      border-color: #d7dce3;
+      display: flex;
+      align-items: center;
+    }
+
+    .select2-selection__rendered {
+      font-size: 13px;
+      line-height: 36px !important;
+      padding-left: 10px !important;
+    }
+
+    .select2-selection__arrow {
+      top: 6px !important;
+      right: 6px !important;
+    }
+
+    .ats-submit-wrap {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 8px 12px 10px;
+      background: linear-gradient(to top, rgba(244,246,250,0.98), rgba(244,246,250,0.3));
+      backdrop-filter: blur(4px);
+      z-index: 999;
+    }
+
+    .ats-submit-btn {
+      width: 100%;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 11px 0;
+      background: #22a447;
+      border-color: #22a447;
+    }
+
+    .ats-submit-btn:hover {
+      background: #1b8a3b;
+      border-color: #1b8a3b;
+    }
+
+    @media (min-width: 768px) {
+      .ats-submit-wrap {
+        position: static;
+        padding: 0;
+        background: transparent;
+        backdrop-filter: none;
+        margin-top: 16px;
+      }
+      .ats-submit-btn {
+        max-width: 260px;
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+      }
+      .ats-wrapper {
+        padding-bottom: 30px;
+      }
+    }
+
+    /* Topbar usuario + logout */
+    .ats-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+      font-size: 10px;
+      color: #4a5568;
+    }
+
+    .ats-topbar-user {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+
+    .ats-topbar-user .name {
+      font-weight: 600;
+      color: var(--cicsa);
+      font-size: 11px;
+    }
+
+    .logout-btn {
+      font-size: 10px;
+      padding: 4px 9px;
+      border-radius: 999px;
+    }
+
+    .alert {
+      font-size: 11px;
+      padding: 6px 9px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+<div class="ats-wrapper">
+  <div class="card-ats">
+
+    <!-- Topbar usuario + logout -->
+    <div class="ats-topbar">
+      <div class="ats-topbar-user">
+        <span class="name">{{ datos.nombre }}</span>
+        <span>Brigada: {{ datos.brigada or "SIN BRIGADA" }} · Zona: {{ datos.zona or "-" }}</span>
+      </div>
+      <a href="{{ url_for('logout') }}" class="btn btn-outline-danger logout-btn">
+        Cerrar sesión
+      </a>
+    </div>
+
+    <!-- ✅ Mensaje de éxito si existe -->
+    {% if mensaje %}
+      <div class="alert alert-success" role="alert">
+        {{ mensaje }}
+        {% if pdf_filename %}
+          <br>
+          <a href="{{ url_for('descargar_pdf', filename=pdf_filename) }}" class="alert-link">
+            Descargar PDF generado
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <!-- Encabezado con logo -->
+    <div class="ats-header">
+      <img src="{{ url_for('static', filename='logo_cicsa.png') }}" alt="CICSA" class="ats-logo-img">
+      <div class="ats-title">Charla de 5 min / Análisis de Trabajo Seguro</div>
+      <div class="ats-subtitle">Registro digital – CICSA · Uso en campo desde móvil</div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="formATS">
+      <!-- todo tu formulario igual que antes: fechas, trabajo, charlas, tecnicos, fotos, firmas, riesgos, etc -->
+
+      <!-- FECHA / HORAS -->
+      <div class="section-label"><span class="icon"></span>Datos de la jornada</div>
+      <div class="row g-2">
+        <div class="col-12 col-md-4">
+          <label class="form-label">Fecha</label>
+          <input type="date" name="fecha_dia" id="fecha_dia" class="form-control" required />
+        </div>
+        <div class="col-6 col-md-4">
+          <label class="form-label">Hora inicio</label>
+          <input type="time" name="hora_inicio" class="form-control" required />
+        </div>
+        <div class="col-6 col-md-4">
+          <label class="form-label">Hora final</label>
+          <input type="time" name="hora_fin" class="form-control" required />
+        </div>
+      </div>
+
+      <!-- TRABAJO -->
+      <div class="section-label"><span class="icon"></span>Trabajo</div>
+      <div class="row g-2">
+        <div class="col-12 col-md-6">
+          <label class="form-label">Trabajo a realizar</label>
+          <select class="form-select" name="trabajo" id="trabajo">
+            <option>Empalme de Fibra Óptica</option>
+            <option>Inspección / Limpieza de cámara</option>
+            <option>Tendido de FO (aéreo/subterráneo)</option>
+            <option>Mantenimiento preventivo</option>
+            <option>Patrullaje de ruta</option>
+            <option>Atención de avería</option>
+            <option>Supervisión de trabajos</option>
+            <option value="OTRO">Otro (especificar)</option>
+          </select>
+          <input class="form-control mt-2 d-none" name="trabajo_otro" id="trabajo_otro" placeholder="Describe el trabajo..." />
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Lugar de trabajo</label>
+          <textarea name="lugar_trabajo" rows="2" class="form-control" placeholder="Ej. Av. Faucett con Venezuela" required></textarea>
+        </div>
+      </div>
+
+      <!-- CHARLAS PROGRAMADAS -->
+      <div class="section-label"><span class="icon"></span>Charla programada</div>
+      <div class="row g-2">
+        <div class="col-12 col-md-8">
+          <label class="form-label">Tema</label>
+          <select name="charla" id="charla" class="form-select select2">
+            {% for c in charlas %}
+              <option value="{{ c.item }}" data-expositor="{{ c.expositor }}">{{ c.item }} — {{ c.tema }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Expositor</label>
+          <input type="text" id="expositor_charla" class="form-control" value="{% if charlas and charlas[0] %}{{ charlas[0].expositor }}{% endif %}" readonly />
+        </div>
+      </div>
+
+      <!-- SUPERVISOR CICSA -->
+      <div class="section-label"><span class="icon"></span>Supervisor CICSA</div>
+      <div class="row g-2 mb-1">
+        <div class="col-12 col-md-6">
+          <label for="supervisor" class="form-label">Seleccione Supervisor</label>
+          <select name="supervisor" id="supervisor" class="form-select" required>
+            <option value="">-- Seleccione --</option>
+            <option>WISMAN MEZA</option>
+            <option>CARLOS ROCA</option>
+            <option>MIGUEL PORTOCARRERO</option>
+            <option>LUIS SÁNCHEZ</option>
+            <option>ROBERTO ZAPATA</option>
+            <option>HUBERT HUANCO</option>
+          </select>
+          <div class="hint">Se usará para el envío automático del reporte.</div>
+        </div>
+      </div>
+
+      <!-- TÉCNICOS -->
+      <div class="section-label"><span class="icon"></span>Técnicos (1 a 3) con foto individual</div>
+      {% for i in [1,2,3] %}
+      <div class="tecnico-card">
+        <div class="tecnico-title">Técnico {{ i }} {% if i == 1 %}(principal){% else %}(opcional){% endif %}</div>
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-6">
+            <label class="form-label">Seleccionar técnico</label>
+            <select name="tec{{ i }}" class="form-select select2">
+              <option value="">-- (opcional) --</option>
+              {% for t in tecnicos %}
+                <option value="{{ t.usuario }}">{{ t.nombre }} — {{ t.cargo }} — {{ t.dni }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label">Observaciones</label>
+            <input class="form-control" name="obs{{ i }}" placeholder="Opcional (tareas, hallazgos, etc.)" />
+          </div>
+        </div>
+
+        <!-- EPP -->
+        <div class="mt-2">
+          <div class="hint mb-1">Marcar EPP entregado / verificado.</div>
+          <div class="row g-1">
+            {% set epps = [
+              "Fotocheck","Uniforme","Casco de seguridad","Barbuquejo",
+              "Lentes de seguridad","Lentes ultravioletas",
+              "Guantes dieléctricos","Guantes anticorte",
+              "Arnés / cinturón de seguridad","Chaleco reflectivo",
+              "Botas dieléctricas","SCTR"
+            ] %}
+            {% for e in epps %}
+            <div class="col-6 col-md-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="epp{{ i }}[]" value="{{ e }}" id="epp{{ i }}_{{ loop.index }}">
+                <label class="form-check-label" for="epp{{ i }}_{{ loop.index }}">{{ e }}</label>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- FOTO INDIVIDUAL DEL TÉCNICO CON EPP -->
+        <div class="mt-2">
+          <label class="form-label">Foto Técnico {{ i }} con EPP</label>
+          <input
+            type="file"
+            name="foto_tec{{ i }}"
+            accept="image/*"
+            capture="environment"
+            class="form-control"
+            onchange="previewFotoTec(event, {{ i }})"
+          />
+          <img id="foto-preview-{{ i }}" class="foto-preview" hidden />
+          <div class="hint">Tomar foto individual del técnico con su EPP completo.</div>
+        </div>
+
+        <!-- Firma -->
+        <div class="mt-2">
+          <label class="form-label">Firma Técnico {{ i }}</label>
+          <canvas id="sig{{ i }}" class="sig"></canvas>
+          <div class="hint">Firmar con el dedo (móvil) o mouse (PC).</div>
+          <input type="hidden" name="firma{{ i }}" id="firma{{ i }}">
+          <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="clearSig({{ i }})">
+            Borrar firma {{ i }}
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+
+      <!-- RIESGOS -->
+      <div class="section-label"><span class="icon"></span>Riesgos observados</div>
+      <div class="row g-1" id="riesgos-lista">
+        {% set riesgos = [
+          "Caídas a distinto nivel","Atropellos / tránsito vehicular","Cortes con FO / vidrio",
+          "Contacto eléctrico","Golpes con herramientas","Deslizamientos / superficies inestables",
+          "Esfuerzo físico / posturas forzadas","Exposición solar / calor","Robo / asalto",
+          "Animales (perros, insectos)"
+        ] %}
+        {% for r in riesgos %}
+        <div class="col-6 col-md-4">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="riesgos[]" value="{{ r }}" id="riesgo_{{ loop.index }}">
+            <label class="form-check-label" for="riesgo_{{ loop.index }}">{{ r }}</label>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <input class="form-control mt-2" name="riesgos_otro" placeholder="Otro riesgo (opcional)" />
+
+      <!-- RECOMENDACIONES -->
+      <div class="section-label"><span class="icon"></span>Recomendaciones / Comentarios</div>
+      <textarea name="recomendaciones" rows="2" class="form-control" placeholder="Opcional: hallazgos, acuerdos, acciones a tomar."></textarea>
+
+      <!-- BOTÓN ENVIAR -->
+      <div class="ats-submit-wrap">
+        <button class="btn btn-success ats-submit-btn" type="submit">
+          Generar PDF y Registrar ATS
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Fecha por defecto hoy
+  const fechaInput = document.getElementById("fecha_dia");
+  if (fechaInput) {
+    fechaInput.value = new Date().toISOString().split("T")[0];
+  }
+
+  // Select2
+  $(function () {
+    $('.select2').select2({
+      width: '100%',
+      placeholder: 'Seleccione una opción',
+      allowClear: true
+    });
+  });
+
+  // Mostrar campo OTRO en trabajo
+  const trabajoSel = document.getElementById("trabajo");
+  if (trabajoSel) {
+    trabajoSel.addEventListener("change", function (e) {
+      const otro = document.getElementById("trabajo_otro");
+      if (e.target.value === "OTRO") {
+        otro.classList.remove("d-none");
+        otro.required = true;
+        otro.focus();
+      } else {
+        otro.classList.add("d-none");
+        otro.required = false;
+        otro.value = "";
+      }
+    });
+  }
+
+  // Charlas: actualizar expositor
+  const selCharla = document.getElementById("charla");
+  const expositorInput = document.getElementById("expositor_charla");
+  function syncExpositor() {
+    if (!selCharla || !expositorInput) return;
+    const opt = selCharla.options[selCharla.selectedIndex];
+    const ex = opt ? (opt.dataset.expositor || "") : "";
+    expositorInput.value = ex;
+  }
+  if (selCharla) {
+    selCharla.addEventListener("change", syncExpositor);
+    syncExpositor();
+  }
+
+  // Firmas
+  function setupSig(idx) {
+    const canvas = document.getElementById("sig" + idx);
+    const hidden = document.getElementById("firma" + idx);
+    if (!canvas || !hidden) return;
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.max(260, rect.width) * ratio;
+      const height = (rect.height || 140) * ratio;
+      canvas.width = width;
+      canvas.height = height;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#000";
+      ctx.clearRect(0, 0, width, height);
+    }
+
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    let drawing = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches ? e.touches[0] : null;
+      const clientX = touch ? touch.clientX : e.clientX;
+      const clientY = touch ? touch.clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function start(e) {
+      e.preventDefault();
+      drawing = true;
+      const p = getPos(e);
+      lastX = p.x;
+      lastY = p.y;
+    }
+
+    function move(e) {
+      if (!drawing) return;
+      e.preventDefault();
+      const p = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      lastX = p.x;
+      lastY = p.y;
+    }
+
+    function end() {
+      if (!drawing) return;
+      drawing = false;
+      hidden.value = canvas.toDataURL("image/png");
+    }
+
+    canvas.addEventListener("mousedown", start);
+    canvas.addEventListener("mousemove", move);
+    canvas.addEventListener("mouseup", end);
+    canvas.addEventListener("mouseleave", end);
+    canvas.addEventListener("touchstart", start, { passive: false });
+    canvas.addEventListener("touchmove", move, { passive: false });
+    canvas.addEventListener("touchend", end);
+
+    document.getElementById("formATS").addEventListener("submit", function () {
+      if (!hidden.value) {
+        hidden.value = canvas.toDataURL("image/png");
+      }
+    });
+  }
+
+  function clearSig(i) {
+    const c = document.getElementById("sig" + i);
+    const h = document.getElementById("firma" + i);
+    if (!c || !h) return;
+    const ctx = c.getContext("2d");
+    ctx.clearRect(0, 0, c.width, c.height);
+    h.value = "";
+  }
+
+  [1, 2, 3].forEach(setupSig);
+
+  // Preview foto por técnico
+  function previewFotoTec(e, i) {
+    const img = document.getElementById("foto-preview-" + i);
+    if (!img) return;
+    if (e.target.files && e.target.files[0]) {
+      img.src = URL.createObjectURL(e.target.files[0]);
+      img.hidden = false;
+    } else {
+      img.hidden = true;
+      img.src = "";
+    }
+  }
+
+  window.clearSig = clearSig;
+  window.previewFotoTec = previewFotoTec;
+</script>
+</body>
+</html>

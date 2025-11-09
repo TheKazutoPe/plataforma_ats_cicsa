@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Generar Reporte ATS / Charla 5 min</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --gap: 12px; }
+    *{ box-sizing: border-box; font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body{ margin:0; background:#0b0b0b; color:#eaeaea; }
+    .wrap{ max-width: 980px; margin: 0 auto; padding: 16px; }
+    h1{ font-size: 1.25rem; margin: 12px 0 16px; }
+    fieldset{ border: 1px solid #2a2a2a; border-radius: 12px; padding: 12px; margin-bottom: 14px; }
+    legend{ padding: 0 8px; color:#9ad; font-weight: 600; }
+    label{ display:block; font-size:.9rem; margin-bottom: 6px; color:#bdbdbd;}
+    input, select, textarea{ width:100%; padding: 10px 12px; border-radius: 10px; border:1px solid #2a2a2a; background:#161616; color:#eaeaea; }
+    .row{ display:grid; grid-template-columns: 1fr; gap: var(--gap); }
+    .row-2{ grid-template-columns: 1fr 1fr; } .row-3{ grid-template-columns: 1fr 1fr 1fr; }
+    .btn{ display:inline-block; padding:10px 14px; border-radius: 12px; background:#1f7ae0; color:white; border:none; cursor:pointer; font-weight:600;}
+    .btn.subtle{ background:#2a2a2a; }
+    .pill{ padding: 6px 10px; border-radius: 999px; background:#232323; font-size:.85rem; display:inline-block;}
+    .table-like{ overflow:auto; border:1px solid #2a2a2a; border-radius:10px; }
+    .flex{ display:flex; align-items:center; gap:8px; flex-wrap: wrap; }
+    .sig { border: 1px dashed #555; border-radius: 10px; background: #111; touch-action: none; }
+    .sticky{ position: sticky; bottom: 10px; background: #0b0b0b; padding: 10px 0; }
+    @media (min-width: 740px){ .row-md-2{ grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Reporte ATS / Charla 5 min – CICSA</h1>
+
+  <form action="/generate" method="post" enctype="multipart/form-data">
+    <fieldset>
+      <legend>Encabezado</legend>
+      <div class="row row-md-2">
+        <div>
+          <label>Empresa</label>
+          <input name="empresa" placeholder="CICSA PERU S.A.C.">
+        </div>
+        <div>
+          <label>Contratista</label>
+          <input name="contratista" placeholder="CICSA">
+        </div>
+        <div>
+          <label>Proyecto / N° Plano</label>
+          <input name="proyecto" placeholder="PROYECTO FO – Pedro Ruiz">
+        </div>
+        <div>
+          <label>Fecha</label>
+          <input type="date" name="fecha">
+        </div>
+        <div>
+          <label>Área</label>
+          <input name="area" placeholder="FO Pedro Ruiz">
+        </div>
+        <div>
+          <label>Hora inicio</label>
+          <input type="time" name="hora_inicio">
+        </div>
+        <div>
+          <label>Hora final</label>
+          <input type="time" name="hora_final">
+        </div>
+      </div>
+      <div class="row row-3" style="margin-top:12px;">
+        <div>
+          <label>Código</label>
+          <input name="codigo" value="PE-FR-SG-31">
+        </div>
+        <div>
+          <label>Versión</label>
+          <input name="version" value="08">
+        </div>
+        <div>
+          <label>Fecha (cabecera)</label>
+          <input name="fecha_formato" placeholder="dd/mm/aaaa">
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Charla de 5 minutos</legend>
+      <div class="row row-md-2">
+        <div>
+          <label>Tema</label>
+          <input name="tema" placeholder="Normalización de FAT y seguridad en desplazamientos">
+        </div>
+        <div>
+          <label>Expositor</label>
+          <input name="expositor" placeholder="Nombre – Cargo (DNI)">
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Participantes y EPP</legend>
+      <div id="part-list"></div>
+      <button type="button" class="btn subtle" onclick="addPart()">+ Participante</button>
+    </fieldset>
+
+    <fieldset>
+      <legend>ATS</legend>
+      <div id="ats-list"></div>
+      <button type="button" class="btn subtle" onclick="addATS()">+ Actividad</button>
+    </fieldset>
+
+    <fieldset>
+      <legend>Recomendaciones</legend>
+      <textarea name="recomendaciones" rows="3" placeholder="Verificar EPP completo y check-list del vehículo..."></textarea>
+    </fieldset>
+
+    <fieldset>
+      <legend>Firmas</legend>
+      <div class="row row-md-2">
+        <div>
+          <label>Encargado</label>
+          <input name="encargado" placeholder="Nombre Encargado">
+          <div class="pill" style="margin:8px 0;">Firme con el dedo</div>
+          <canvas id="sigEnc" class="sig" width="360" height="120"></canvas>
+          <input type="hidden" name="firma_enc" id="firma_enc">
+          <div class="flex">
+            <button type="button" class="btn subtle" onclick="clearSig('sigEnc')">Limpiar</button>
+            <button type="button" class="btn subtle" onclick="saveSig('sigEnc','firma_enc')">Guardar firma</button>
+          </div>
+        </div>
+        <div>
+          <label>Jefe de Obra / Supervisor</label>
+          <input name="jefe_obra" placeholder="Nombre Jefe de Obra">
+          <div class="pill" style="margin:8px 0;">Firme con el dedo</div>
+          <canvas id="sigJefe" class="sig" width="360" height="120"></canvas>
+          <input type="hidden" name="firma_jefe" id="firma_jefe">
+          <div class="flex">
+            <button type="button" class="btn subtle" onclick="clearSig('sigJefe')">Limpiar</button>
+            <button type="button" class="btn subtle" onclick="saveSig('sigJefe','firma_jefe')">Guardar firma</button>
+          </div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Fotos del personal (opcional)</legend>
+      <input type="file" name="fotos[]" accept="image/*" multiple>
+    </fieldset>
+
+    <div class="sticky">
+      <button class="btn" type="submit">Generar PDF</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  // --- Signature Pad minimal (no external libs) ---
+  function initSig(canvasId){
+    const c = document.getElementById(canvasId);
+    const ctx = c.getContext('2d');
+    ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#fff';
+    let drawing = false, lastX=0, lastY=0;
+
+    const pos = e => {
+      const r = c.getBoundingClientRect();
+      if (e.touches && e.touches[0]) {
+        return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
+      } else {
+        return { x: e.clientX - r.left, y: e.clientY - r.top };
+      }
+    };
+
+    const start = e => { drawing = true; const p = pos(e); lastX=p.x; lastY=p.y; e.preventDefault(); };
+    const move  = e => {
+      if(!drawing) return;
+      const p = pos(e);
+      ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(p.x,p.y); ctx.stroke();
+      lastX=p.x; lastY=p.y; e.preventDefault();
+    };
+    const end   = e => { drawing = false; e.preventDefault(); };
+
+    c.addEventListener('mousedown', start); c.addEventListener('mousemove', move); c.addEventListener('mouseup', end); c.addEventListener('mouseleave', end);
+    c.addEventListener('touchstart', start, {passive:false}); c.addEventListener('touchmove', move, {passive:false}); c.addEventListener('touchend', end);
+  }
+  function clearSig(id){ const c=document.getElementById(id); c.getContext('2d').clearRect(0,0,c.width,c.height); }
+  function saveSig(canvasId, inputId){ const c=document.getElementById(canvasId); document.getElementById(inputId).value = c.toDataURL('image/png'); alert('Firma guardada ✔'); }
+  initSig('sigEnc'); initSig('sigJefe');
+
+  // --- Dynamic Participants ---
+  function partRow(idx){
+    return `<div class="table-like" style="padding:10px; margin-bottom:10px;">
+      <div class="row row-3">
+        <div><label>Nombre</label><input name="part_nombre[]" required></div>
+        <div><label>Cargo</label><input name="part_cargo[]"></div>
+        <div><label>DNI</label><input name="part_dni[]"></div>
+      </div>
+      <div class="flex" style="margin-top:8px;">
+        ${["uniforme","casco","barbiquejo","lentes_seguridad","lentes_uv","guantes_dielec","guantes_anticorte","chaleco_reflectivo","arnes_cinturon","botas_dielec","sctr"].map(k => {
+          const label = k.replace("_"," ").replace("_"," ");
+          return `<label class="pill"><input type="checkbox" name="part_${k}[]"> ${label}</label>`;
+        }).join("")}
+      </div>
+      <div style="margin-top:8px;">
+        <label>Observaciones</label><input name="part_obs[]">
+      </div>
+      <div style="text-align:right; margin-top:8px;">
+        <button type="button" class="btn subtle" onclick="this.closest('.table-like').remove()">Quitar</button>
+      </div>
+    </div>`;
+  }
+  function addPart(){ document.getElementById('part-list').insertAdjacentHTML('beforeend', partRow(Date.now())); }
+  addPart(); addPart();
+
+  // --- Dynamic ATS ---
+  function atsRow(){
+    return `<div class="table-like" style="padding:10px; margin-bottom:10px;">
+      <div class="row">
+        <div><label>Actividad</label><input name="ats_act[]" required></div>
+        <div><label>Peligros</label><input name="ats_pel[]"></div>
+        <div><label>Riesgos</label><input name="ats_ries[]"></div>
+        <div><label>Medidas de control</label><input name="ats_ctrl[]"></div>
+        <div><label>Nivel (A/M/B)</label>
+          <select name="ats_lvl[]">
+            <option value="A">A</option><option value="M" selected>M</option><option value="B">B</option>
+          </select>
+        </div>
+      </div>
+      <div style="text-align:right; margin-top:8px;"><button type="button" class="btn subtle" onclick="this.closest('.table-like').remove()">Quitar</button></div>
+    </div>`;
+  }
+  function addATS(){ document.getElementById('ats-list').insertAdjacentHTML('beforeend', atsRow()); }
+  addATS();
+</script>
+</body>
+</html>
