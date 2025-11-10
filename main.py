@@ -24,7 +24,8 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Bucket donde se guardarán los PDFs (crearlo en Supabase)
+# Bucket donde se guardarán los PDFs
+# IMPORTANTE: crear este bucket en Supabase (o setear SUPABASE_PDF_BUCKET con el nombre que uses)
 PDF_BUCKET = os.getenv("SUPABASE_PDF_BUCKET", "ats_pdfs")
 
 os.makedirs("temp", exist_ok=True)
@@ -280,17 +281,15 @@ def formulario():
                     file_bytes,
                 )
 
-                # Intentar obtener URL pública (si el bucket es público)
-                try:
-                    pdf_public_url = supabase.storage.from_(PDF_BUCKET).get_public_url(
-                        pdf_storage_path
-                    )
-                except Exception:
-                    pdf_public_url = None
+                # Construir URL pública (el bucket debe ser PUBLIC)
+                base_url = SUPABASE_URL.rstrip("/")
+                pdf_public_url = f"{base_url}/storage/v1/object/public/{PDF_BUCKET}/{pdf_storage_path}"
             else:
                 print("⚠️ PDF no encontrado para subir a Supabase Storage:", pdf_path)
         except Exception as e:
             print("⚠️ Error al subir PDF a Supabase Storage:", e)
+            pdf_storage_path = None
+            pdf_public_url = None
 
         # ===== Registrar cumplimiento diario en ats_registros_diarios =====
         try:
@@ -337,7 +336,13 @@ def formulario():
         )
 
     # GET
-    return render_template("formulario.html", datos=user, tecnicos=tecnicos, charlas=charlas, mensaje=None)
+    return render_template(
+        "formulario.html",
+        datos=user,
+        tecnicos=tecnicos,
+        charlas=charlas,
+        mensaje=None,
+    )
 
 
 # =========================
