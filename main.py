@@ -25,7 +25,6 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Bucket donde se guardarán los PDFs
-# IMPORTANTE: crear este bucket en Supabase (o setear SUPABASE_PDF_BUCKET con el nombre que uses)
 PDF_BUCKET = os.getenv("SUPABASE_PDF_BUCKET", "ats_pdfs")
 
 os.makedirs("temp", exist_ok=True)
@@ -275,10 +274,11 @@ def formulario():
                 # Ruta dentro del bucket
                 pdf_storage_path = f"ats/{fecha_reg}/{brigada_reg}/{pdf_name}"
 
-                # Subir al bucket configurado
+                # Subir al bucket configurado con content-type correcto
                 supabase.storage.from_(PDF_BUCKET).upload(
                     pdf_storage_path,
                     file_bytes,
+                    file_options={"content-type": "application/pdf"},
                 )
 
                 # Construir URL pública (el bucket debe ser PUBLIC)
