@@ -248,7 +248,7 @@ def formulario():
         pdf_path = generar_pdf(data)
         pdf_name = os.path.basename(pdf_path)
 
-        # ===== Enviar correo con PDF (usando el retorno para el mensaje) =====
+        # ===== Enviar correo con PDF =====
         email_ok = False
         try:
             supervisor = data.get("supervisor", "SIN SUPERVISOR")
@@ -268,13 +268,19 @@ def formulario():
                 with open(pdf_path, "rb") as f:
                     file_bytes = f.read()
 
-                # Ruta organizada por fecha y brigada
                 fecha_reg = data.get("fecha_dia") or datetime.now().strftime("%Y-%m-%d")
                 brigada_reg = (data.get("brigada") or "SIN_BRIGADA").replace(" ", "_")
+
+                # Ruta dentro del bucket
                 pdf_storage_path = f"ats/{fecha_reg}/{brigada_reg}/{pdf_name}"
 
-                supabase.storage.from_(PDF_BUCKET).upload(pdf_storage_path, file_bytes)
+                # Subir al bucket configurado
+                supabase.storage.from_(PDF_BUCKET).upload(
+                    pdf_storage_path,
+                    file_bytes,
+                )
 
+                # Intentar obtener URL pública (si el bucket es público)
                 try:
                     pdf_public_url = supabase.storage.from_(PDF_BUCKET).get_public_url(
                         pdf_storage_path
@@ -305,9 +311,8 @@ def formulario():
                 "supervisor": supervisor_reg,
                 "tecnicos_count": tecnicos_count,
                 "completado": True,
-                # Descomenta si agregaste columnas en la tabla:
-                # "pdf_path": pdf_storage_path,
-                # "pdf_url": pdf_public_url,
+                "pdf_path": pdf_storage_path,
+                "pdf_url": pdf_public_url,
             }
 
             supabase.table("ats_registros_diarios").upsert(
@@ -332,7 +337,7 @@ def formulario():
         )
 
     # GET
-    return render_template("formulario.html", datos=user, tecnicos=tecnicos, charlas=charlas)
+    return render_template("formulario.html", datos=user, tecnicos=tecnicos, charlas=charlas, mensaje=None)
 
 
 # =========================
