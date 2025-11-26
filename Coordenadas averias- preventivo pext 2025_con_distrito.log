@@ -1,0 +1,106 @@
+2025-11-14 00:09:44,625 | INFO | Iniciando: Coordenadas averias- preventivo pext 2025.xlsx -> Coordenadas averias- preventivo pext 2025_con_distrito.xlsx
+2025-11-14 00:09:44,820 | INFO | Filas totales: 2510
+2025-11-14 00:09:44,829 | INFO | Coordenadas únicas válidas: 1525
+2025-11-14 00:09:44,837 | INFO | Entradas en caché al inicio: 3692
+2025-11-14 00:09:44,874 | INFO | Caché persistida. Total entradas: 3692 | Nuevas requests en esta corrida: 0
+2025-11-14 00:09:45,191 | INFO | Archivo final: C:\Users\abrah\OneDrive\Desktop\PLATAFORMA_REPORTES_SEGURIDAD\Coordenadas averias- preventivo pext 2025_con_distrito.xlsx
+2025-11-14 00:09:45,191 | INFO | Proceso completado ✅
+2025-11-14 00:19:14,291 | INFO | Iniciando: Coordenadas averias- preventivo pext 2025.xlsx -> Coordenadas averias- preventivo pext 2025_con_distrito.xlsx
+2025-11-14 00:19:14,565 | ERROR | Falta la columna 'LONGITUD' en 'Sheet1'.
+2025-11-14 00:19:37,927 | INFO | Iniciando: Coordenadas averias- preventivo pext 2025.xlsx -> Coordenadas averias- preventivo pext 2025_con_distrito.xlsx
+2025-11-14 00:19:38,227 | INFO | Filas totales: 7137
+2025-11-14 00:19:38,251 | INFO | Coordenadas únicas válidas: 4822
+2025-11-14 00:19:38,259 | INFO | Entradas en caché al inicio: 3692
+2025-11-14 00:22:57,299 | INFO | Procesadas 100/4822 keys únicas; nuevas requests en esta corrida: 97
+2025-11-14 00:26:13,661 | INFO | Procesadas 200/4822 keys únicas; nuevas requests en esta corrida: 193
+2025-11-14 00:26:27,957 | INFO | Caché guardada (checkpoint).
+2025-11-14 00:29:31,336 | INFO | Procesadas 300/4822 keys únicas; nuevas requests en esta corrida: 290
+2025-11-14 00:32:55,763 | INFO | Procesadas 400/4822 keys únicas; nuevas requests en esta corrida: 389
+2025-11-14 00:33:18,293 | INFO | Caché guardada (checkpoint).
+2025-11-14 00:36:14,388 | INFO | Procesadas 500/4822 keys únicas; nuevas requests en esta corrida: 486
+2025-11-14 00:39:39,203 | INFO | Procesadas 600/4822 keys únicas; nuevas requests en esta corrida: 586
+2025-11-14 00:40:07,882 | INFO | Caché guardada (checkpoint).
+2025-11-14 00:42:57,415 | INFO | Procesadas 700/4822 keys únicas; nuevas requests en esta corrida: 683
+2025-11-14 00:46:17,232 | INFO | Procesadas 800/4822 keys únicas; nuevas requests en esta corrida: 781
+2025-11-14 00:46:55,855 | INFO | Caché guardada (checkpoint).
+2025-11-14 00:49:30,310 | INFO | Procesadas 900/4822 keys únicas; nuevas requests en esta corrida: 876
+2025-11-14 00:52:44,101 | INFO | Procesadas 1000/4822 keys únicas; nuevas requests en esta corrida: 971
+2025-11-14 00:53:43,149 | INFO | Caché guardada (checkpoint).
+2025-11-14 00:55:57,583 | INFO | Procesadas 1100/4822 keys únicas; nuevas requests en esta corrida: 1066
+2025-11-14 00:59:18,868 | INFO | Procesadas 1200/4822 keys únicas; nuevas requests en esta corrida: 1165
+2025-11-14 01:00:30,279 | INFO | Caché guardada (checkpoint).
+2025-11-14 01:02:36,895 | INFO | Procesadas 1300/4822 keys únicas; nuevas requests en esta corrida: 1262
+2025-11-14 01:06:01,358 | INFO | Procesadas 1400/4822 keys únicas; nuevas requests en esta corrida: 1362
+2025-11-14 01:07:19,059 | INFO | Caché guardada (checkpoint).
+2025-11-14 01:09:15,517 | INFO | Procesadas 1500/4822 keys únicas; nuevas requests en esta corrida: 1457
+2025-11-14 01:12:35,757 | INFO | Procesadas 1600/4822 keys únicas; nuevas requests en esta corrida: 1555
+2025-11-14 01:14:07,408 | INFO | Caché guardada (checkpoint).
+2025-11-14 01:15:57,423 | INFO | Procesadas 1700/4822 keys únicas; nuevas requests en esta corrida: 1654
+2025-11-14 01:19:14,873 | INFO | Procesadas 1800/4822 keys únicas; nuevas requests en esta corrida: 1751
+2025-11-14 01:20:55,596 | INFO | Caché guardada (checkpoint).
+2025-11-14 01:22:40,772 | INFO | Procesadas 1900/4822 keys únicas; nuevas requests en esta corrida: 1851
+2025-11-14 01:26:03,510 | INFO | Procesadas 2000/4822 keys únicas; nuevas requests en esta corrida: 1949
+2025-11-14 01:27:47,701 | INFO | Caché guardada (checkpoint).
+2025-11-14 01:29:19,696 | INFO | Procesadas 2100/4822 keys únicas; nuevas requests en esta corrida: 2045
+2025-11-14 01:32:44,847 | INFO | Procesadas 2200/4822 keys únicas; nuevas requests en esta corrida: 2145
+2025-11-14 01:34:37,714 | INFO | Caché guardada (checkpoint).
+2025-11-14 01:36:10,033 | INFO | Procesadas 2300/4822 keys únicas; nuevas requests en esta corrida: 2245
+2025-11-14 01:39:32,261 | INFO | Procesadas 2400/4822 keys únicas; nuevas requests en esta corrida: 2343
+2025-11-14 01:41:29,023 | INFO | Caché guardada (checkpoint).
+2025-11-14 01:42:49,190 | INFO | Procesadas 2500/4822 keys únicas; nuevas requests en esta corrida: 2439
+2025-11-14 01:46:12,023 | INFO | Procesadas 2600/4822 keys únicas; nuevas requests en esta corrida: 2538
+2025-11-14 01:48:18,650 | INFO | Caché guardada (checkpoint).
+2025-11-14 01:49:27,865 | INFO | Procesadas 2700/4822 keys únicas; nuevas requests en esta corrida: 2634
+2025-11-14 01:52:47,543 | INFO | Procesadas 2800/4822 keys únicas; nuevas requests en esta corrida: 2732
+2025-11-14 01:55:06,065 | INFO | Caché guardada (checkpoint).
+2025-11-14 01:55:59,256 | INFO | Procesadas 2900/4822 keys únicas; nuevas requests en esta corrida: 2826
+2025-11-14 01:59:20,655 | INFO | Procesadas 3000/4822 keys únicas; nuevas requests en esta corrida: 2925
+2025-11-14 02:01:55,474 | INFO | Caché guardada (checkpoint).
+2025-11-14 02:02:38,360 | INFO | Procesadas 3100/4822 keys únicas; nuevas requests en esta corrida: 3021
+2025-11-14 02:05:58,758 | INFO | Procesadas 3200/4822 keys únicas; nuevas requests en esta corrida: 3119
+2025-11-14 02:08:44,220 | INFO | Caché guardada (checkpoint).
+2025-11-14 02:09:17,064 | INFO | Procesadas 3300/4822 keys únicas; nuevas requests en esta corrida: 3216
+2025-11-14 02:12:36,957 | INFO | Procesadas 3400/4822 keys únicas; nuevas requests en esta corrida: 3314
+2025-11-14 02:15:32,270 | INFO | Caché guardada (checkpoint).
+2025-11-14 02:15:56,840 | INFO | Procesadas 3500/4822 keys únicas; nuevas requests en esta corrida: 3412
+2025-11-14 02:19:11,262 | INFO | Procesadas 3600/4822 keys únicas; nuevas requests en esta corrida: 3507
+2025-11-14 02:22:20,865 | INFO | Caché guardada (checkpoint).
+2025-11-14 02:22:28,999 | INFO | Procesadas 3700/4822 keys únicas; nuevas requests en esta corrida: 3604
+2025-11-14 02:25:48,789 | INFO | Procesadas 3800/4822 keys únicas; nuevas requests en esta corrida: 3702
+2025-11-14 02:29:10,200 | INFO | Procesadas 3900/4822 keys únicas; nuevas requests en esta corrida: 3800
+2025-11-14 02:29:10,267 | INFO | Caché guardada (checkpoint).
+2025-11-14 02:32:28,482 | INFO | Procesadas 4000/4822 keys únicas; nuevas requests en esta corrida: 3897
+2025-11-14 02:35:44,658 | INFO | Procesadas 4100/4822 keys únicas; nuevas requests en esta corrida: 3993
+2025-11-14 02:35:59,066 | INFO | Caché guardada (checkpoint).
+2025-11-14 02:39:00,404 | INFO | Procesadas 4200/4822 keys únicas; nuevas requests en esta corrida: 4089
+2025-11-14 02:42:18,425 | INFO | Procesadas 4300/4822 keys únicas; nuevas requests en esta corrida: 4185
+2025-11-14 02:42:49,172 | INFO | Caché guardada (checkpoint).
+2025-11-14 02:45:43,575 | INFO | Procesadas 4400/4822 keys únicas; nuevas requests en esta corrida: 4285
+2025-11-14 02:48:57,002 | INFO | Procesadas 4500/4822 keys únicas; nuevas requests en esta corrida: 4380
+2025-11-14 02:49:37,798 | INFO | Caché guardada (checkpoint).
+2025-11-14 02:52:18,810 | INFO | Procesadas 4600/4822 keys únicas; nuevas requests en esta corrida: 4479
+2025-11-14 02:55:38,320 | INFO | Procesadas 4700/4822 keys únicas; nuevas requests en esta corrida: 4577
+2025-11-14 02:56:25,242 | INFO | Caché guardada (checkpoint).
+2025-11-14 02:59:00,415 | INFO | Procesadas 4800/4822 keys únicas; nuevas requests en esta corrida: 4676
+2025-11-14 02:59:45,307 | INFO | Caché persistida. Total entradas: 8390 | Nuevas requests en esta corrida: 4698
+2025-11-14 02:59:46,350 | INFO | Archivo final: C:\Users\abrah\OneDrive\Desktop\PLATAFORMA_REPORTES_SEGURIDAD\Coordenadas averias- preventivo pext 2025_con_distrito.xlsx
+2025-11-14 02:59:46,350 | INFO | Proceso completado ✅
+2025-11-14 13:04:04,509 | INFO | Iniciando: Coordenadas averias- preventivo pext 2025.xlsx -> Coordenadas averias- preventivo pext 2025_con_distrito.xlsx
+2025-11-14 13:04:05,221 | INFO | Filas totales: 7136
+2025-11-14 13:04:05,245 | INFO | Coordenadas únicas válidas: 4766
+2025-11-14 13:04:05,264 | INFO | Entradas en caché al inicio: 8390
+2025-11-14 13:04:15,567 | INFO | Caché persistida. Total entradas: 8395 | Nuevas requests en esta corrida: 5
+2025-11-14 13:05:38,372 | INFO | Iniciando: Coordenadas averias- preventivo pext 2025.xlsx -> Coordenadas averias- preventivo pext 2025_con_distrito.xlsx
+2025-11-14 13:05:38,651 | INFO | Filas totales: 7136
+2025-11-14 13:05:38,676 | INFO | Coordenadas únicas válidas: 4766
+2025-11-14 13:05:38,695 | INFO | Entradas en caché al inicio: 8395
+2025-11-14 13:05:38,778 | INFO | Caché persistida. Total entradas: 8395 | Nuevas requests en esta corrida: 0
+2025-11-14 13:05:39,700 | INFO | Archivo final: C:\Users\abrah\OneDrive\Desktop\PLATAFORMA_REPORTES_SEGURIDAD\Coordenadas averias- preventivo pext 2025_con_distrito.xlsx
+2025-11-14 13:05:39,700 | INFO | Proceso completado ✅
+2025-11-26 01:34:54,185 | INFO | Iniciando: Coordenadas averias- preventivo pext 2025.xlsx -> Coordenadas averias- preventivo pext 2025_con_distrito.xlsx
+2025-11-26 01:34:54,968 | INFO | Filas totales: 7136
+2025-11-26 01:34:54,992 | INFO | Coordenadas únicas válidas: 4766
+2025-11-26 01:34:55,011 | INFO | Entradas en caché al inicio: 8395
+2025-11-26 01:34:55,106 | INFO | Caché persistida. Total entradas: 8395 | Nuevas requests en esta corrida: 0
+2025-11-26 01:34:56,020 | INFO | Archivo final: C:\Users\abrah\OneDrive\Desktop\PLATAFORMA_REPORTES_SEGURIDAD\Coordenadas averias- preventivo pext 2025_con_distrito.xlsx
+2025-11-26 01:34:56,020 | INFO | Proceso completado ✅
