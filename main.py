@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, session, url_for
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from datetime import datetime
+from threading import Thread
 import base64
 import os
 
@@ -13,27 +14,34 @@ from email_sender import enviar_correo
 # =========================
 load_dotenv()
 
-app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "supersecret")
-
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    raise RuntimeError("Falta configurar SUPABASE_URL o SUPABASE_ANON_KEY en el .env")
+    raise RuntimeError("❌ SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY no configurados en el entorno.")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Bucket donde se guardarán los PDFs
-PDF_BUCKET = os.getenv("SUPABASE_PDF_BUCKET", "ats_pdfs")
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "cicsa-secret-key")
 
-os.makedirs("temp", exist_ok=True)
+PDF_BUCKET = os.getenv("PDF_BUCKET", "ats-pdfs")
+
+
+# =========================
+# HELPERS DE SESIÓN
+# =========================
+def is_logged_in():
+    return "user" in session
 
 
 def get_user():
-    return session.get("usuario")
+    return session.get("user")
 
 
+# =========================
+# RUTA PRINCIPAL
+# =========================
 @app.route("/")
 def index():
     return redirect(url_for("login"))
@@ -51,37 +59,38 @@ def login():
         clave = (request.form.get("clave") or "").strip()
 
         if not usuario or not clave:
-            error = "Ingrese usuario y clave."
-            return render_template("login.html", error=error)
-
-        try:
-            resp = (
-                supabase.table("usuarios_brigadas")
-                .select("id,usuario,nombre,cargo,brigada,zona,contrata,dni,clave,activo")
-                .eq("usuario", usuario)
-                .eq("clave", clave)
-                .eq("activo", True)
-                .single()
-                .execute()
-            )
-            data = resp.data
-        except Exception:
-            data = None
-
-        if not data:
-            error = "Usuario o clave incorrectos."
+            error = "Usuario y clave son requeridos."
         else:
-            session["usuario"] = {
-                "id": data.get("id"),
-                "usuario": data.get("usuario"),
-                "nombre": data.get("nombre"),
-                "cargo": data.get("cargo"),
-                "brigada": data.get("brigada"),
-                "zona": data.get("zona"),
-                "contrata": data.get("contrata"),
-                "dni": data.get("dni"),
-            }
-            return redirect(url_for("formulario"))
+            try:
+                resp = (
+                    supabase.table("usuarios_brigadas")
+                    .select(
+                        "usuario,nombre,cargo,brigada,zona,contrata,activo,dni"
+                    )
+                    .eq("usuario", usuario)
+                    .eq("clave", clave)
+                    .eq("activo", True)
+                    .limit(1)
+                    .execute()
+                )
+                data = resp.data or []
+                if not data:
+                    error = "Usuario o clave incorrectos, o usuario inactivo."
+                else:
+                    user = data[0]
+                    session["user"] = {
+                        "usuario": user.get("usuario"),
+                        "nombre": user.get("nombre"),
+                        "cargo": user.get("cargo"),
+                        "brigada": user.get("brigada"),
+                        "zona": user.get("zona"),
+                        "contrata": user.get("contrata"),
+                        "dni": user.get("dni"),
+                    }
+                    return redirect(url_for("formulario"))
+            except Exception as e:
+                print("❌ Error consultando usuarios_brigadas:", e)
+                error = "Error interno al validar usuario."
 
     return render_template("login.html", error=error)
 
@@ -107,241 +116,238 @@ def formulario():
     except Exception:
         tecnicos = []
 
-    # Charlas programadas
-    try:
-        charlas = (
-            supabase.table("charlas_programadas")
-            .select("item,tema,expositor")
-            .order("item")
-            .execute()
-        ).data or []
-    except Exception:
-        charlas = []
+    mensaje = None
+    error = None
 
     if request.method == "POST":
-        os.makedirs("temp", exist_ok=True)
-        data = {}
-
-        # ===== Datos generales =====
-        data["fecha_dia"] = request.form.get("fecha_dia") or datetime.now().strftime(
-            "%Y-%m-%d"
-        )
-        data["hora_inicio"] = request.form.get("hora_inicio", "")
-        data["hora_fin"] = request.form.get("hora_fin", "")
-
-        trabajo = request.form.get("trabajo") or ""
-        trabajo_otro = request.form.get("trabajo_otro") or ""
-        if trabajo == "OTRO" and trabajo_otro.strip():
-            data["actividad"] = trabajo_otro.strip()
-        else:
-            data["actividad"] = trabajo
-
-        data["lugar_trabajo"] = request.form.get("lugar_trabajo", "")
-        data["recomendaciones"] = request.form.get("recomendaciones", "")
-        data["supervisor"] = request.form.get("supervisor", "SIN SUPERVISOR")
-
-        # Usuario que registra
-        data["usuario_registro"] = user.get("usuario")
-        data["brigada_usuario"] = user.get("brigada")
-        data["zona_usuario"] = user.get("zona")
-        data["contrata"] = user.get("contrata", "")
-        data["area"] = "MRD F.O. LIMA METROP."
-        data["brigada"] = user.get("brigada", "SIN BRIGADA")
-
-        # ===== Charla programada =====
-        charla_item = request.form.get("charla")
-        expositor_manual = request.form.get("expositor_charla", "")
-        charla_sel = next(
-            (c for c in charlas if str(c.get("item")) == str(charla_item)),
-            None,
-        )
-        if charla_sel:
-            data["tema_charla"] = charla_sel.get("tema", "")
-            data["expositor_charla"] = (
-                charla_sel.get("expositor", "") or expositor_manual
-            )
-        else:
-            data["tema_charla"] = charla_item or ""
-            data["expositor_charla"] = expositor_manual
-
-        # ===== Riesgos =====
-        riesgos = request.form.getlist("riesgos[]")
-        riesgo_otro = (request.form.get("riesgos_otro") or "").strip()
-        if riesgo_otro:
-            riesgos.append(riesgo_otro)
-        data["riesgos"] = riesgos
-
-        # ===== Técnicos (1..3) con firma y foto individual =====
-        tecnicos_post = []
-
-        for i in (1, 2, 3):
-            key = request.form.get(f"tec{i}")
-            if not key:
-                continue
-
-            tec = next((t for t in tecnicos if t.get("usuario") == key), None)
-            if not tec:
-                continue
-
-            fila = {
-                "item": i,
-                "usuario": tec.get("usuario", ""),
-                "nombre": tec.get("nombre", ""),
-                "cargo": tec.get("cargo", ""),
-                "dni": tec.get("dni", ""),
-                "brigada": tec.get("brigada", ""),
-                "zona": tec.get("zona", ""),
-                "contrata": tec.get("contrata", ""),
-                "epp": request.form.getlist(f"epp{i}[]"),
-                "obs": (request.form.get(f"obs{i}", "") or "").strip(),
-            }
-
-            # Firma desde canvas
-            firma_b64 = request.form.get(f"firma{i}")
-            fila["firma_path"] = None
-            if firma_b64 and "base64" in firma_b64:
-                try:
-                    raw = firma_b64.split(",")[-1]
-                    firma_path = os.path.join(
-                        "temp",
-                        f"firma_tec{i}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png",
-                    )
-                    with open(firma_path, "wb") as out:
-                        out.write(base64.b64decode(raw))
-                    fila["firma_path"] = firma_path
-                except Exception as e:
-                    print(f"Error guardando firma técnico {i}:", e)
-
-            # Foto individual técnico
-            foto_file = request.files.get(f"foto_tec{i}")
-            fila["foto_path"] = None
-            if foto_file and foto_file.filename:
-                try:
-                    foto_path = os.path.join(
-                        "temp",
-                        f"foto_tec{i}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg",
-                    )
-                    foto_file.save(foto_path)
-                    fila["foto_path"] = foto_path
-                except Exception as e:
-                    print(f"Error guardando foto técnico {i}:", e)
-
-            tecnicos_post.append(fila)
-
-        data["tecnicos"] = tecnicos_post
-
-        # ===== Foto general opcional =====
-        foto_general = request.files.get("foto_epp")
-        data["foto_path"] = None
-        if foto_general and foto_general.filename:
-            try:
-                foto_path = os.path.join(
-                    "temp",
-                    f"foto_general_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg",
-                )
-                foto_general.save(foto_path)
-                data["foto_path"] = foto_path
-            except Exception as e:
-                print("Error guardando foto general:", e)
-
-        # ===== Generar PDF =====
-        pdf_path = generar_pdf(data)
-        pdf_name = os.path.basename(pdf_path)
-
-        # ===== Enviar correo con PDF =====
-        email_ok = False
         try:
+            data = {}
+
+            # =========================
+            # DATOS GENERALES
+            # =========================
+            data["usuario_registro"] = user.get("usuario")
+            data["nombre_registro"] = user.get("nombre")
+            data["brigada_usuario"] = user.get("brigada")
+            data["zona_usuario"] = user.get("zona")
+            data["contrata"] = user.get("contrata")
+
+            data["empresa"] = request.form.get("empresa", "CICSA PERU S.A.C.")
+            data["contrata"] = (
+                request.form.get("contrata") or user.get("contrata") or "CICSA PERU S.A.C."
+            )
+            data["actividad"] = request.form.get("actividad", "")
+            data["fecha_dia"] = request.form.get("fecha_dia", "")
+            data["hora_inicio"] = request.form.get("hora_inicio", "")
+            data["hora_fin"] = request.form.get("hora_fin", "")
+            data["area"] = request.form.get("area", "MRD F.O.")
+
+            data["supervisor"] = request.form.get("supervisor", "").strip()
+            data["lugar_trabajo"] = request.form.get("lugar_trabajo", "").strip()
+            data["coordenadas"] = request.form.get("coordenadas", "").strip()
+            data["riesgos_adicionales"] = request.form.get("riesgos_adicionales", "").strip()
+
+            # =========================
+            # TAREAS / ACTIVIDADES
+            # =========================
+            actividades = []
+            for i in range(1, 11):
+                tarea = request.form.get(f"tarea{i}", "").strip()
+                riesgo = request.form.get(f"riesgo{i}", "").strip()
+                medida = request.form.get(f"medida{i}", "").strip()
+                responsable = request.form.get(f"responsable{i}", "").strip()
+
+                if not (tarea or riesgo or medida or responsable):
+                    continue
+
+                actividades.append(
+                    {
+                        "item": i,
+                        "tarea": tarea,
+                        "riesgo": riesgo,
+                        "medida": medida,
+                        "responsable": responsable,
+                    }
+                )
+            data["actividades"] = actividades
+
+            # =========================
+            # TÉCNICOS / PARTICIPANTES
+            # =========================
+            tecnicos_post = []
+            for i in range(1, 11):
+                key = (request.form.get(f"tec{i}") or "").strip()
+                if not key:
+                    continue
+
+                tec = next((t for t in tecnicos if t.get("usuario") == key), None)
+                if not tec:
+                    continue
+
+                fila = {
+                    "item": i,
+                    "usuario": tec.get("usuario", ""),
+                    "nombre": tec.get("nombre", ""),
+                    "cargo": tec.get("cargo", ""),
+                    "dni": tec.get("dni", ""),
+                    "brigada": tec.get("brigada", ""),
+                    "zona": tec.get("zona", ""),
+                    "contrata": tec.get("contrata", ""),
+                    "epp": request.form.getlist(f"epp{i}[]"),
+                    "obs": (request.form.get(f"obs{i}", "") or "").strip(),
+                }
+
+                # Firma desde canvas
+                firma_b64 = request.form.get(f"firma{i}")
+                fila["firma_path"] = None
+                if firma_b64 and "base64" in firma_b64:
+                    try:
+                        raw = firma_b64.split(",")[-1]
+                        firma_path = os.path.join(
+                            "temp",
+                            f"firma_tec{i}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png",
+                        )
+                        os.makedirs("temp", exist_ok=True)
+                        with open(firma_path, "wb") as img_f:
+                            img_f.write(base64.b64decode(raw))
+                        fila["firma_path"] = firma_path
+                    except Exception as e:
+                        print(f"⚠️ Error guardando firma del técnico {i}: {e}")
+
+                tecnicos_post.append(fila)
+
+            data["tecnicos"] = tecnicos_post
+
+            # Firma del supervisor
+            firma_sup_b64 = request.form.get("firma_supervisor")
+            data["firma_supervisor_path"] = None
+            if firma_sup_b64 and "base64" in firma_sup_b64:
+                try:
+                    raw = firma_sup_b64.split(",")[-1]
+                    firma_sup_path = os.path.join(
+                        "temp",
+                        f"firma_sup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png",
+                    )
+                    os.makedirs("temp", exist_ok=True)
+                    with open(firma_sup_path, "wb") as img_f:
+                        img_f.write(base64.b64decode(raw))
+                    data["firma_supervisor_path"] = firma_sup_path
+                except Exception as e:
+                    print("⚠️ Error guardando firma del supervisor:", e)
+
+            # =========================
+            # GENERAR PDF
+            # =========================
+            pdf_path = generar_pdf(data)
+            if not pdf_path or not os.path.isfile(pdf_path):
+                raise RuntimeError("No se pudo generar el PDF.")
+
+            # =========================
+            # ENVIAR CORREO (ASÍNCRONO)
+            # =========================
+            # ===== Enviar correo con PDF (ASÍNCRONO: no bloquea el formulario) =====
             supervisor = data.get("supervisor", "SIN SUPERVISOR")
             fecha_actual = datetime.now().strftime("%Y-%m-%d")
             brigada_usuario = (user.get("brigada") or "SIN BRIGADA").upper()
             subject = f"Reporte ATS – {supervisor} – {brigada_usuario} – {fecha_actual}"
-            email_ok = enviar_correo(pdf_path, supervisor, subject)
-        except Exception as e:
-            print("⚠️ Error al enviar correo (controlado):", e)
-            email_ok = False
 
-        # ===== Subir PDF a Supabase Storage =====
-        pdf_storage_path = None
-        pdf_public_url = None
-        try:
-            if os.path.isfile(pdf_path):
-                with open(pdf_path, "rb") as f:
-                    file_bytes = f.read()
+            def _enviar_correo_async(pdf_path_local, supervisor_local, subject_local):
+                try:
+                    enviar_correo(pdf_path_local, supervisor_local, subject_local)
+                except Exception as e:
+                    print("⚠️ Error al enviar correo (hilo en segundo plano):", e)
 
-                fecha_reg = data.get("fecha_dia") or datetime.now().strftime("%Y-%m-%d")
-                brigada_reg = (data.get("brigada") or "SIN_BRIGADA").replace(" ", "_")
+            try:
+                Thread(
+                    target=_enviar_correo_async,
+                    args=(pdf_path, supervisor, subject),
+                    daemon=True,
+                ).start()
+                email_ok = True  # asumimos OK de cara al usuario; el hilo reporta errores en logs
+            except Exception as e:
+                print("⚠️ No se pudo lanzar el hilo de envío de correo:", e)
+                email_ok = False
 
-                # Ruta dentro del bucket
-                pdf_storage_path = f"ats/{fecha_reg}/{brigada_reg}/{pdf_name}"
-
-                # Subir al bucket configurado con content-type correcto
-                supabase.storage.from_(PDF_BUCKET).upload(
-                    pdf_storage_path,
-                    file_bytes,
-                    file_options={"content-type": "application/pdf"},
-                )
-
-                # Construir URL pública (el bucket debe ser PUBLIC)
-                base_url = SUPABASE_URL.rstrip("/")
-                pdf_public_url = f"{base_url}/storage/v1/object/public/{PDF_BUCKET}/{pdf_storage_path}"
-            else:
-                print("⚠️ PDF no encontrado para subir a Supabase Storage:", pdf_path)
-        except Exception as e:
-            print("⚠️ Error al subir PDF a Supabase Storage:", e)
+            # =========================
+            # SUBIR PDF A SUPABASE STORAGE
+            # =========================
             pdf_storage_path = None
             pdf_public_url = None
+            try:
+                if os.path.isfile(pdf_path):
+                    pdf_filename = os.path.basename(pdf_path)
+                    pdf_storage_path = f"ats/{datetime.now().strftime('%Y/%m/%d')}/{pdf_filename}"
 
-        # ===== Registrar cumplimiento diario en ats_registros_diarios =====
-        try:
-            fecha_reg = data["fecha_dia"]
-            brigada_reg = data.get("brigada_usuario")
-            zona_reg = data.get("zona_usuario")
-            contrata_reg = data.get("contrata")
-            usuario_reg = data.get("usuario_registro")
-            supervisor_reg = data.get("supervisor")
-            tecnicos_count = len(tecnicos_post)
+                    with open(pdf_path, "rb") as f:
+                        file_data = f.read()
 
-            registro = {
-                "fecha": fecha_reg,
-                "brigada": brigada_reg,
-                "zona": zona_reg,
-                "contrata": contrata_reg,
-                "usuario_registro": usuario_reg,
-                "supervisor": supervisor_reg,
-                "tecnicos_count": tecnicos_count,
-                "completado": True,
-                "pdf_path": pdf_storage_path,
-                "pdf_url": pdf_public_url,
-            }
+                    supabase.storage.from_(PDF_BUCKET).upload(
+                        pdf_storage_path,
+                        file_data,
+                        {"content-type": "application/pdf"},
+                    )
 
-            supabase.table("ats_registros_diarios").upsert(
-                registro,
-                on_conflict="fecha,brigada,contrata",
-            ).execute()
+                    base_url = SUPABASE_URL.rstrip("/")
+                    pdf_public_url = (
+                        f"{base_url}/storage/v1/object/public/{PDF_BUCKET}/{pdf_storage_path}"
+                    )
+                else:
+                    print("⚠️ PDF no encontrado para subir a Supabase Storage:", pdf_path)
+            except Exception as e:
+                print("⚠️ Error al subir PDF a Supabase Storage:", e)
+                pdf_storage_path = None
+                pdf_public_url = None
+
+            # =========================
+            # REGISTRO DIARIO EN SUPABASE
+            # =========================
+            try:
+                fecha_reg = data["fecha_dia"]
+                brigada_reg = data.get("brigada_usuario")
+                zona_reg = data.get("zona_usuario")
+                contrata_reg = data.get("contrata")
+                usuario_reg = data.get("usuario_registro")
+                supervisor_reg = data.get("supervisor")
+                tecnicos_count = len(tecnicos_post)
+
+                registro = {
+                    "fecha": fecha_reg,
+                    "brigada": brigada_reg,
+                    "zona": zona_reg,
+                    "contrata": contrata_reg,
+                    "usuario_registro": usuario_reg,
+                    "supervisor": supervisor_reg,
+                    "tecnicos_count": tecnicos_count,
+                    "completado": True,
+                    "pdf_path": pdf_storage_path,
+                    "pdf_url": pdf_public_url,
+                }
+
+                supabase.table("ats_registros_diarios").insert(registro).execute()
+            except Exception as e:
+                print("⚠️ Error registrando ats_registros_diarios:", e)
+
+            # =========================
+            # MENSAJE FINAL AL USUARIO
+            # =========================
+            if email_ok:
+                mensaje = "✅ Reporte ATS generado, registrado y envío de correo en proceso."
+            else:
+                mensaje = (
+                    "⚠️ Reporte ATS generado y registrado en la plataforma. "
+                    "No se pudo lanzar correctamente el envío automático de correo."
+                )
+
         except Exception as e:
-            print("⚠️ Error registrando ATS diario en Supabase:", e)
+            print("❌ Error general en POST /formulario:", e)
+            error = "Ocurrió un error al procesar el formulario. Intente nuevamente."
 
-        # ===== Mensaje en la plataforma =====
-        if email_ok:
-            mensaje = "✅ Reporte ATS generado, enviado por correo y registrado correctamente."
-        else:
-            mensaje = "⚠️ Reporte ATS generado y registrado en la plataforma. No se pudo enviar el correo automático (revisar configuración SMTP)."
-
-        return render_template(
-            "formulario.html",
-            datos=user,
-            tecnicos=tecnicos,
-            charlas=charlas,
-            mensaje=mensaje,
-        )
-
-    # GET
     return render_template(
         "formulario.html",
-        datos=user,
+        user=user,
         tecnicos=tecnicos,
-        charlas=charlas,
-        mensaje=None,
+        mensaje=mensaje,
+        error=error,
     )
 
 
