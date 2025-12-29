@@ -362,20 +362,136 @@ def generar_pdf(data: dict) -> str:
     ]
     filas_r = [header_r]
 
+    MATRIZ_ATS_PEX = {
+        'CONDUCCION DE VEHICULOS MENORES': {
+            'peligros': 'Condiciones de vía, fallas mecánicas, clima, imprudencia y distracciones.',
+            'riesgos': 'Choques/colisiones, atropellos, caídas, lesiones personales y daños materiales.',
+            'controles': 'Checklist preuso, mantenimiento al día, licencia vigente, conducción defensiva, límites de velocidad, cinturón/casco, prohibido celular, plan de ruta y estacionamiento seguro.',
+            'nivel': 'M',
+        },
+        'SEÑALIZACION Y CONTROL DE TRANSITO EN VIA PUBLICA (CONOS / VIGIA / CIERRE PARCIAL)': {
+            'peligros': 'Tránsito vehicular, mala visibilidad, conductores distraídos, trabajo en borde de vía.',
+            'riesgos': 'Atropello, choque, golpes y lesiones a trabajadores/terceros.',
+            'controles': 'Plan de señalización (conos, cinta, paletas), vigía, chaleco reflectivo, iluminación/flashers, ubicar vehículo en protección, permisos y coordinación con tránsito.',
+            'nivel': 'M',
+        },
+        'INSPECCION DE RUTA Y RECONOCIMIENTO DE ZONA DE TRABAJO (WALKDOWN)': {
+            'peligros': 'Terreno irregular, pendientes, obstáculos, animales/insectos, tránsito cercano.',
+            'riesgos': 'Caídas al mismo nivel, picaduras/mordeduras, golpes, atropello.',
+            'controles': 'Inspección previa, ruta segura, calzado antideslizante, repelente, chaleco reflectivo, comunicación y delimitación del área antes de iniciar.',
+            'nivel': 'M',
+        },
+        'APERTURA DE CAMARAS / BUZONES Y MANIPULACION DE DUCTERIA (RIESGO DE ESPACIO CONFINADO)': {
+            'peligros': 'Espacio confinado (gases, falta de oxígeno), agua/inundación, caída a distinto nivel, residuos biológicos, herramientas/cortes.',
+            'riesgos': 'Asfixia/intoxicación, caídas, infecciones, golpes y cortes.',
+            'controles': 'No ingresar sin autorización, medición de gases, ventilación, línea de vida si aplica, barandas/tapa asegurada, guantes, lentes, linterna, orden/limpieza y supervisión.',
+            'nivel': 'M',
+        },
+        'EXCAVACION MANUAL / ZANJADO PARA CANALIZACION O LOCALIZACION DE DUCTOS': {
+            'peligros': 'Derrumbe, servicios enterrados (eléctrico/agua/gas), herramientas manuales, proyección de partículas, tránsito.',
+            'riesgos': 'Atrapamiento, electrocución/daño a redes, cortes/golpes, lesiones graves.',
+            'controles': 'Permiso de excavación, detección de servicios, zanja con talud/entibado según profundidad, señalizar y aislar, EPP completo (casco, guantes, lentes), no excavar con lluvia intensa.',
+            'nivel': 'M',
+        },
+        'TENDIDO / JALADO DE CABLE FO POR DUCTERIA (WINCHE / SOPLADORA / HALADO MANUAL)': {
+            'peligros': 'Tensión del cable, atrapamientos en rodillos/winche, retroceso del cable, manipulación de bobinas, tránsito.',
+            'riesgos': 'Golpes, atrapamientos, cortes, lesiones musculares, daños al cable.',
+            'controles': 'Comunicación entre puntos, área despejada, guantes anticorte, no poner manos en rodillos, usar freno/guía, respetar radios de curvatura, señalizar zona y usar soportes para bobina.',
+            'nivel': 'M',
+        },
+        'TENDIDO AEREO DE CABLE FO EN POSTES (FLEJADO / SUSPENSION / CRUCES)': {
+            'peligros': 'Trabajo en altura, cercanía a líneas eléctricas, caída de objetos, viento/clima, tránsito.',
+            'riesgos': 'Caídas graves, electrocución, lesiones por objetos caídos, atropello.',
+            'controles': 'Distancia segura a redes eléctricas, arnés/línea de vida si aplica, escalera certificada y asegurada, delimitar zona inferior, casco con barboquejo, vigía y suspender por clima adverso.',
+            'nivel': 'M',
+        },
+        'TRABAJOS EN ALTURA CON ESCALERAS TELESCOPICAS PARA SUBIR CABLES DE COMUNICACIÓN CAIDOS AL SUELO': {
+            'peligros': 'Caídas de altura, falla de escalera, tránsito vehicular, riesgo eléctrico, caída de herramientas, sobreesfuerzos, clima adverso, atrapamientos.',
+            'riesgos': 'Lesiones graves o fatales por caída; electrocución; atropellos; golpes y cortes; caída de objetos; distensiones musculares.',
+            'controles': 'Escalera certificada e inspeccionada; señalización de tránsito; distancia segura a cables eléctricos; ayudante para estabilizar; arnés cuando aplique; guantes adecuados; calzado antideslizante; ropa/chaleco reflectivo.',
+            'nivel': 'M',
+        },
+        'TRABAJO EN POSTE CON ARNES Y LINEA DE VIDA (SI APLICA)': {
+            'peligros': 'Trabajo en altura en poste, puntos de anclaje inadecuados, fatiga, herramientas, riesgo eléctrico.',
+            'riesgos': 'Caídas graves/fatales, golpes/cortes, electrocución.',
+            'controles': 'Arnés de cuerpo completo, línea de vida y anclaje certificado, inspección de EPP, técnica de ascenso segura, herramientas con talabarte, mantener distancia a redes energizadas y vigía.',
+            'nivel': 'M',
+        },
+        'MEDICION CON EQUIPO OTDR PARA DETERMINAR LA DISTANCIA APROXIMADA DE ROTURA DE LA FIBRA OPTICA': {
+            'peligros': 'Señal láser activa, filamentos cortantes, caídas al mismo nivel, riesgo eléctrico por equipo/cargador, tránsito vehicular, mala postura, iluminación deficiente.',
+            'riesgos': 'Daño ocular, cortes, caídas, electrocución leve, fallas de medición o daño del OTDR, lesiones musculares, atropellos.',
+            'controles': 'Verificar enlace sin luz activa, organizar cables, señalizar área, usar cargadores certificados, evitar humedad/lluvia, guantes anticorte, calzado seguro y chaleco reflectivo.',
+            'nivel': 'M',
+        },
+        'FUSION DE FIBRA OPTICA EN CASO DE SER  NECESARIO AL NIVEL DEL SUELO O EN ALTURA': {
+            'peligros': 'Filamentos cortantes, señal láser, posturas forzadas, caídas al mismo nivel, riesgo eléctrico por equipos, trabajo en altura, falla de escalera, contactos eléctricos, caída de objetos.',
+            'riesgos': 'Cortes, daño ocular, lesiones musculares, caídas (mismo nivel o altura), golpes y cortes, impacto a terceros por objetos caídos.',
+            'controles': 'Mesa/soporte estable, contenedor para filamentos, señalización, verificar enlace sin luz activa, orden y limpieza, guantes anticorte, gafas, escalera certificada, arnés si aplica, calzado antideslizante y ropa reflectiva.',
+            'nivel': 'M',
+        },
+        'EMPALME / CONECTORIZACION EN NAP / CTO / CAJAS TERMINALES (MANEJO DE FIBRA)': {
+            'peligros': 'Filamentos de fibra, señal láser, herramientas punzocortantes, polvo/humedad, posturas forzadas.',
+            'riesgos': 'Cortes, daño ocular, irritación, fallas de conectividad, lesiones musculares.',
+            'controles': 'Verificar enlace sin luz, limpieza de conectores, guantes anticorte, gafas, contenedor para restos, iluminación adecuada, mesa/soporte estable y orden/limpieza.',
+            'nivel': 'M',
+        },
+        'USO DE HERRAMIENTAS ELECTRICAS PORTATILES (TALADRO / AMOLADORA / SIERRA)': {
+            'peligros': 'Partes giratorias, proyección de partículas, cortes, cables eléctricos dañados, ruido.',
+            'riesgos': 'Cortes/amputaciones, lesiones oculares, electrocución, quemaduras, hipoacusia.',
+            'controles': 'Inspección de herramienta, guardas instaladas, lentes/careta, guantes adecuados, protector auditivo si aplica, RCD/diferencial, cables en buen estado y área despejada.',
+            'nivel': 'M',
+        },
+        'MANIPULACION Y TRANSPORTE DE BOBINAS, ESCALERAS Y HERRAMIENTAS (CARGA / DESCARGA)': {
+            'peligros': 'Sobreesfuerzo, golpes por carga, caída de objetos, atrapamientos, mal agarre.',
+            'riesgos': 'Lumbalgias, esguinces, contusiones, cortes.',
+            'controles': 'Levantamiento seguro, 2 personas para cargas pesadas, carros/diablitos, guantes, calzado de seguridad, asegurar bobinas/escaleras en vehículo y mantener orden.',
+            'nivel': 'M',
+        },
+        'USO DE GENERADOR ELECTRICO / EXTENSIONES EN CAMPO': {
+            'peligros': 'Electricidad, combustibles, monóxido/ventilación deficiente, cables expuestos, incendio.',
+            'riesgos': 'Electrocución, quemaduras, intoxicación, incendio.',
+            'controles': 'Generador en zona ventilada, puesta a tierra, extintor, combustible controlado, cables y conexiones en buen estado, RCD/diferencial, no operar bajo lluvia sin protección y señalizar el área.',
+            'nivel': 'M',
+        },
+        'TRABAJO NOCTURNO O EN BAJA ILUMINACION': {
+            'peligros': 'Baja visibilidad, fatiga, tránsito, terreno irregular, seguridad ciudadana.',
+            'riesgos': 'Atropello, caídas, golpes, errores operativos.',
+            'controles': 'Iluminación portátil, chaleco reflectivo y luces intermitentes, pausas y rotación, vigía, señalizar ampliamente, comunicación y evaluación de seguridad de la zona.',
+            'nivel': 'M',
+        }
+    }
+
+
     for i, r in enumerate(riesgos, start=1):
+        info = MATRIZ_ATS_PEX.get(r)
+        if info:
+            pel_txt = info.get("peligros", "")
+            rie_txt = info.get("riesgos", "")
+            ctrl_txt = info.get("controles", "")
+            nivel = (info.get("nivel") or "M").strip().upper()
+        else:
+            # Fallback (si marcan un riesgo genérico del checklist)
+            pel_txt = "Riesgo mecánico / eléctrico / físico"
+            rie_txt = "Accidente / lesión / caída"
+            ctrl_txt = "Uso de EPP / señalización / orden y limpieza"
+            nivel = "M"
+
+        a_mark = "X" if nivel == "A" else ""
+        m_mark = "X" if nivel == "M" else ""
+        b_mark = "X" if nivel == "B" else ""
+
         filas_r.append(
             [
                 P(i),
                 P(r, False, 6.3, "LEFT"),
-                P("Riesgo mecánico / eléctrico / físico", False, 6.3, "LEFT"),
-                P("Accidente / lesión / caída", False, 6.3, "LEFT"),
-                P("Uso de EPP / señalización / orden y limpieza", False, 6.3, "LEFT"),
-                P(""),
-                P("X", True),
-                P(""),
+                P(pel_txt, False, 6.3, "LEFT"),
+                P(rie_txt, False, 6.3, "LEFT"),
+                P(ctrl_txt, False, 6.3, "LEFT"),
+                P(a_mark, True),
+                P(m_mark, True),
+                P(b_mark, True),
             ]
         )
-
     matriz = Table(
         filas_r,
         colWidths=[
@@ -432,9 +548,47 @@ def generar_pdf(data: dict) -> str:
     # ========= ESPACIO PARA FIRMAS =========
     story.append(Spacer(1, 18))
 
+    # Firma del Encargado: debe ser uno de los técnicos del ATS
+    enc_idx = data.get("encargado_idx")
+    encargado = None
+    if isinstance(enc_idx, int) and tecnicos and 1 <= enc_idx <= len(tecnicos):
+        encargado = tecnicos[enc_idx - 1]
+    else:
+        # fallback: primer técnico con firma
+        for tinfo in tecnicos:
+            if tinfo.get("firma_path"):
+                encargado = tinfo
+                break
+
+    enc_sig = P("")
+    enc_name = ""
+    if encargado:
+        enc_name = (encargado.get("nombre") or "").strip()
+        fp = encargado.get("firma_path")
+        if fp and os.path.exists(fp):
+            enc_sig = IMG(fp, 6.4 * cm, 2.0 * cm)
+
+    enc_cell = Table(
+        [[enc_sig], [P(enc_name or "", False, 7, "CENTER")]],
+        colWidths=[13.85 * cm],
+        rowHeights=[2.4 * cm, 0.6 * cm],
+    )
+    enc_cell.setStyle(
+        TableStyle(
+            [
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
+        )
+    )
+
     firmas = Table(
         [
-            ["", ""],
+            [enc_cell, ""],
             [
                 P("Encargado de CONTRATA/ CICSA PERU", True, 7, "CENTER", AZUL, True),
                 P("Jefe de Obra /Supervisor CONTRATA/ CICSA PERU", True, 7, "CENTER", AZUL, True),
@@ -442,6 +596,7 @@ def generar_pdf(data: dict) -> str:
         ],
         colWidths=[13.85 * cm, 13.85 * cm],
     )
+
     firmas.setStyle(
         TableStyle(
             [

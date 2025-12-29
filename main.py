@@ -239,6 +239,32 @@ def formulario():
 
         data["tecnicos"] = tecnicos_post
 
+        # ===== Encargado (firma en PDF) =====
+        # El encargado debe ser uno de los técnicos del ATS. Por defecto, Técnico 1.
+        enc_sel = request.form.get("encargado_tecnico", "1")
+        try:
+            enc_idx = int(enc_sel)
+        except Exception:
+            enc_idx = 1
+        if enc_idx < 1:
+            enc_idx = 1
+        if enc_idx > len(tecnicos_post) and len(tecnicos_post) > 0:
+            enc_idx = 1
+
+        data["encargado_idx"] = enc_idx
+        if tecnicos_post:
+            enc = tecnicos_post[enc_idx - 1]
+            data["encargado_nombre"] = enc.get("nombre", "")
+            data["encargado_dni"] = enc.get("dni", "")
+            data["encargado_cargo"] = enc.get("cargo", "")
+            data["encargado_firma_path"] = enc.get("firma_path")
+        else:
+            data["encargado_nombre"] = ""
+            data["encargado_dni"] = ""
+            data["encargado_cargo"] = ""
+            data["encargado_firma_path"] = None
+
+
         # ===== Foto general opcional =====
         foto_general = request.files.get("foto_epp")
         data["foto_path"] = None

@@ -361,7 +361,7 @@
         </div>
         <div class="col-12 col-md-4">
           <label class="form-label">Expositor</label>
-          <input type="text" id="expositor_charla" class="form-control"
+          <input type="text" id="expositor_charla" name="expositor_charla" class="form-control"
                  value="{% if charlas and charlas[0] %}{{ charlas[0].expositor }}{% endif %}" readonly />
         </div>
       </div>
@@ -385,7 +385,24 @@
         </div>
       </div>
 
-      <!-- TÉCNICOS -->
+
+      <!-- FOTO GENERAL -->
+      <div class="section-label"><span class="icon"></span>Foto general (EPP / evidencia)</div>
+      <div class="row g-2 mb-2">
+        <div class="col-12 col-md-6">
+          <label class="form-label">Foto general (opcional)</label>
+          <input
+            type="file"
+            name="foto_epp"
+            accept="image/*"
+            capture="environment"
+            class="form-control"
+          />
+          <div class="hint">Foto general del equipo o evidencia (EPP, área de trabajo, condiciones).</div>
+        </div>
+      </div>
+
+<!-- TÉCNICOS -->
       <div class="section-label"><span class="icon"></span>Técnicos (1 a 3) con foto individual</div>
       {% for i in [1,2,3] %}
       <div class="tecnico-card">
@@ -457,27 +474,64 @@
       </div>
       {% endfor %}
 
+      <!-- ENCARGADO (FIRMA EN PDF) -->
+      <div class="section-label"><span class="icon"></span>Encargado de CONTRATA/ CICSA PERU (firma)</div>
+      <div class="row g-2 mb-2">
+        <div class="col-12 col-md-6">
+          <label class="form-label">Seleccione quién firmará como Encargado</label>
+          <select name="encargado_tecnico" class="form-select" required>
+            <option value="1" selected>Técnico 1 (principal)</option>
+            <option value="2">Técnico 2</option>
+            <option value="3">Técnico 3</option>
+          </select>
+          <div class="hint">La firma del técnico seleccionado se colocará en el PDF en “Encargado de CONTRATA/ CICSA PERU”.</div>
+        </div>
+      </div>
+
       <!-- RIESGOS -->
-      <div class="section-label"><span class="icon"></span>Riesgos observados</div>
-      <div class="row g-1" id="riesgos-lista">
-        {% set riesgos = [
-          "Caídas a distinto nivel","Atropellos / tránsito vehicular","Cortes con FO / vidrio",
-          "Contacto eléctrico","Golpes con herramientas","Deslizamientos / superficies inestables",
-          "Esfuerzo físico / posturas forzadas","Exposición solar / calor","Robo / asalto",
-          "Animales (perros, insectos)"
+
+      <!-- IPERC (Integración de peligros) – ACTIVIDADES ATS (FO / PEX) -->
+      <div class="section-label"><span class="icon"></span>Integración de peligros (IPERC) – Actividades ATS (Planta Externa)</div>
+      <div class="hint mb-1">Marca las actividades realizadas. Las actividades ATS llenan la matriz IPERC automáticamente en el PDF.</div>
+
+      <div class="row g-1">
+        {% set actividades_ats = [
+          "CONDUCCION DE VEHICULOS MENORES",
+          "SEÑALIZACION Y CONTROL DE TRANSITO EN VIA PUBLICA (CONOS / VIGIA / CIERRE PARCIAL)",
+          "INSPECCION DE RUTA Y RECONOCIMIENTO DE ZONA DE TRABAJO (WALKDOWN)",
+          "APERTURA DE CAMARAS / BUZONES Y MANIPULACION DE DUCTERIA (RIESGO DE ESPACIO CONFINADO)",
+          "EXCAVACION MANUAL / ZANJADO PARA CANALIZACION O LOCALIZACION DE DUCTOS",
+          "TENDIDO / JALADO DE CABLE FO POR DUCTERIA (WINCHE / SOPLADORA / HALADO MANUAL)",
+          "TENDIDO AEREO DE CABLE FO EN POSTES (FLEJADO / SUSPENSION / CRUCES)",
+          "TRABAJOS EN ALTURA CON ESCALERAS TELESCOPICAS PARA SUBIR CABLES DE COMUNICACIÓN CAIDOS AL SUELO",
+          "TRABAJO EN POSTE CON ARNES Y LINEA DE VIDA (SI APLICA)",
+          "MEDICION CON EQUIPO OTDR PARA DETERMINAR LA DISTANCIA APROXIMADA DE ROTURA DE LA FIBRA OPTICA",
+          "FUSION DE FIBRA OPTICA EN CASO DE SER  NECESARIO AL NIVEL DEL SUELO O EN ALTURA",
+          "EMPALME / CONECTORIZACION EN NAP / CTO / CAJAS TERMINALES (MANEJO DE FIBRA)",
+          "USO DE HERRAMIENTAS ELECTRICAS PORTATILES (TALADRO / AMOLADORA / SIERRA)",
+          "MANIPULACION Y TRANSPORTE DE BOBINAS, ESCALERAS Y HERRAMIENTAS (CARGA / DESCARGA)",
+          "USO DE GENERADOR ELECTRICO / EXTENSIONES EN CAMPO",
+          "TRABAJO NOCTURNO O EN BAJA ILUMINACION"
         ] %}
-        {% for r in riesgos %}
-        <div class="col-6 col-md-4">
+        {% for a in actividades_ats %}
+        <div class="col-12 col-md-6">
           <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="riesgos[]" value="{{ r }}" id="riesgo_{{ loop.index }}">
-            <label class="form-check-label" for="riesgo_{{ loop.index }}">{{ r }}</label>
+            <input class="form-check-input" type="checkbox" name="riesgos[]" value="{{ a }}" id="act_{{ loop.index }}">
+            <label class="form-check-label" for="act_{{ loop.index }}">{{ a }}</label>
           </div>
         </div>
         {% endfor %}
       </div>
-      <input class="form-control mt-2" name="riesgos_otro" placeholder="Otro riesgo (opcional)" />
 
-      <!-- RECOMENDACIONES -->
+      <hr class="my-2">
+
+
+<div class="hint mb-2">Selecciona las actividades del trabajo. La matriz IPERC se completará automáticamente en el PDF.</div>
+      <input class="form-control mb-2" name="riesgos_otro" placeholder="Otra actividad (opcional)" />
+
+      <hr class="my-2">
+
+<!-- RECOMENDACIONES -->
       <div class="section-label"><span class="icon"></span>Recomendaciones / Comentarios</div>
       <textarea name="recomendaciones" rows="2" class="form-control" placeholder="Opcional: hallazgos, acuerdos, acciones a tomar."></textarea>
 
