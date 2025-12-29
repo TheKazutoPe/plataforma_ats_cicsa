@@ -6,6 +6,31 @@ import os
 import json
 from datetime import datetime
 import time
+import re
+def _extract_email(addr: str) -> str:
+    """Normaliza un email para comparación (soporta 'Nombre <email@dominio>')."""
+    if not addr:
+        return ""
+    addr = str(addr).strip()
+    m = re.search(r"<\s*([^>\s]+)\s*>", addr)
+    if m:
+        addr = m.group(1)
+    return addr.strip().lower()
+
+
+def _dedupe_emails(seq):
+    """Quita duplicados preservando orden, usando email normalizado como clave."""
+    seen = set()
+    out = []
+    for a in seq:
+        key = _extract_email(a)
+        if not key:
+            continue
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(a.strip())
+    return out
 
 
 def enviar_correo(pdf_path: str, supervisor: str, subject: str) -> bool:
@@ -98,6 +123,29 @@ def enviar_correo(pdf_path: str, supervisor: str, subject: str) -> bool:
                 f"⚠️ Supervisor '{supervisor}' sin correo y MAIL_TO_DEFAULT no configurado. "
                 f"No hay destinatarios en TO."
             )
+
+
+    # ===============================
+    # EVITAR AUTOENVÍO (NO enviarse a sí mismo)
+    # ===============================
+    sender_email = _extract_email(remitente)
+
+    # Quitar remitente de TO/CC si aparece por error en el mapa, default o CC.
+    destinatarios = [d for d in destinatarios if _extract_email(d) != sender_email]
+    cc = [c for c in cc if _extract_email(c) != sender_email]
+
+    # Quitar duplicados y vacíos
+    destinatarios = _dedupe_emails(destinatarios)
+    cc = _dedupe_emails(cc)
+
+    # Si el único destino era el remitente, no enviamos (para evitar spam / bloqueos)
+    if not destinatarios and not cc:
+        print(
+            "⚠️ Destinatarios vacíos luego de filtrar autoenvío. "
+            "Revisa SUPERVISOR_EMAILS_JSON / MAIL_TO_DEFAULT / MAIL_CC."
+        )
+        return False
+
 
     # Validar que haya al menos un destinatario en TO o CC
     if not destinatarios and not cc:
