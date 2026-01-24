@@ -2,15 +2,13 @@ from flask import Flask, render_template, request, redirect, session, url_for
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from datetime import datetime
-from threading import Thread
 import base64
 import os
 
 from generate_pdf import generar_pdf
-from email_sender import enviar_correo
 
 # =========================
-# CONFIGURACIÓN BASE
+# CONFIGURACION BASE
 # =========================
 load_dotenv()
 
@@ -25,7 +23,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Bucket donde se guardarán los PDFs
+# Bucket donde se guardaran los PDFs
 PDF_BUCKET = os.getenv("SUPABASE_PDF_BUCKET", "ats_pdfs")
 
 os.makedirs("temp", exist_ok=True)
@@ -96,7 +94,7 @@ def formulario():
     if not user:
         return redirect(url_for("login"))
 
-    # Técnicos activos
+    # Tecnicos activos
     try:
         tecnicos = (
             supabase.table("usuarios_brigadas")
@@ -174,14 +172,14 @@ def formulario():
             riesgos.append(riesgo_otro)
         data["riesgos"] = riesgos
 
-        # ===== Técnicas de control =====
+        # ===== Tecnicas de control =====
         controles = request.form.getlist("controles[]")
         control_otro = (request.form.get("controles_otro") or "").strip()
         if control_otro:
             controles.append(control_otro)
         data["controles"] = controles
 
-        # ===== Técnicos / Participantes =====
+        # ===== Tecnicos / Participantes =====
         tecnicos_post = []
         for i in range(1, 11):
             key = request.form.get(f"tec{i}")
@@ -219,9 +217,9 @@ def formulario():
                         out.write(base64.b64decode(raw))
                     fila["firma_path"] = firma_path
                 except Exception as e:
-                    print(f"Error guardando firma técnico {i}:", e)
+                    print(f"Error guardando firma tecnico {i}:", e)
 
-            # Foto individual técnico
+            # Foto individual tecnico
             foto_file = request.files.get(f"foto_tec{i}")
             fila["foto_path"] = None
             if foto_file and foto_file.filename:
@@ -233,14 +231,14 @@ def formulario():
                     foto_file.save(foto_path)
                     fila["foto_path"] = foto_path
                 except Exception as e:
-                    print(f"Error guardando foto técnico {i}:", e)
+                    print(f"Error guardando foto tecnico {i}:", e)
 
             tecnicos_post.append(fila)
 
         data["tecnicos"] = tecnicos_post
 
         # ===== Encargado (firma en PDF) =====
-        # El encargado debe ser uno de los técnicos del ATS. Por defecto, Técnico 1.
+        # El encargado debe ser uno de los tecnicos del ATS. Por defecto, Tecnico 1.
         enc_sel = request.form.get("encargado_tecnico", "1")
         try:
             enc_idx = int(enc_sel)
@@ -264,7 +262,6 @@ def formulario():
             data["encargado_cargo"] = ""
             data["encargado_firma_path"] = None
 
-
         # ===== Foto general opcional =====
         foto_general = request.files.get("foto_epp")
         data["foto_path"] = None
@@ -282,29 +279,6 @@ def formulario():
         # ===== Generar PDF =====
         pdf_path = generar_pdf(data)
         pdf_name = os.path.basename(pdf_path)
-
-        # ===== Enviar correo con PDF (asíncrono, no bloquea) =====
-        supervisor = data.get("supervisor", "SIN SUPERVISOR")
-        fecha_actual = datetime.now().strftime("%Y-%m-%d")
-        brigada_usuario = (user.get("brigada") or "SIN BRIGADA").upper()
-        subject = f"Reporte ATS – {supervisor} – {brigada_usuario} – {fecha_actual}"
-
-        def _enviar_correo_async(pdf_path_local, supervisor_local, subject_local):
-            try:
-                enviar_correo(pdf_path_local, supervisor_local, subject_local)
-            except Exception as e:
-                print("⚠️ Error al enviar correo (hilo en segundo plano):", e)
-
-        try:
-            Thread(
-                target=_enviar_correo_async,
-                args=(pdf_path, supervisor, subject),
-                daemon=True,
-            ).start()
-            email_ok = True
-        except Exception as e:
-            print("⚠️ No se pudo lanzar el hilo de envío de correo:", e)
-            email_ok = False
 
         # ===== Subir PDF a Supabase Storage =====
         pdf_storage_path = None
@@ -327,13 +301,13 @@ def formulario():
                     file_options={"content-type": "application/pdf"},
                 )
 
-                # Construir URL pública (el bucket debe ser PUBLIC)
+                # Construir URL publica (el bucket debe ser PUBLIC)
                 base_url = SUPABASE_URL.rstrip("/")
                 pdf_public_url = (
                     f"{base_url}/storage/v1/object/public/{PDF_BUCKET}/{pdf_storage_path}"
                 )
         except Exception as e:
-            print("⚠️ Error subiendo PDF a Supabase Storage:", e)
+            print("Error subiendo PDF a Supabase Storage:", e)
 
         # ===== Registrar ATS diario en tabla resumen =====
         try:
@@ -363,15 +337,10 @@ def formulario():
                 on_conflict="fecha,brigada,contrata",
             ).execute()
         except Exception as e:
-            print("⚠️ Error registrando ATS diario en Supabase:", e)
+            print("Error registrando ATS diario en Supabase:", e)
 
         # ===== Mensaje en la plataforma =====
-        if email_ok:
-            mensaje = "✅ Reporte ATS generado, envío de correo lanzado y registro guardado."
-        else:
-            mensaje = (
-                "⚠️ Reporte ATS generado y registrado, pero el envío automático de correo no se pudo lanzar."
-            )
+        mensaje = "✅ Reporte ATS generado y registrado correctamente."
 
         return render_template(
             "formulario.html",
