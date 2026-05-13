@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 import base64
 import os
+import uuid
 
 from generate_pdf import generar_pdf
 
@@ -123,6 +124,10 @@ def formulario():
         os.makedirs("temp", exist_ok=True)
         data = {}
 
+        # ===== UUID Global para evitar colisiones =====
+        req_uuid = uuid.uuid4().hex[:8]
+        data["pdf_filename"] = f"ATS_{req_uuid}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+
         # ===== Datos generales =====
         data["fecha_dia"] = request.form.get("fecha_dia") or datetime.now().strftime(
             "%Y-%m-%d"
@@ -211,7 +216,7 @@ def formulario():
                     raw = firma_b64.split(",")[-1]
                     firma_path = os.path.join(
                         "temp",
-                        f"firma_tec{i}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png",
+                        f"firma_tec{i}_{req_uuid}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png",
                     )
                     with open(firma_path, "wb") as out:
                         out.write(base64.b64decode(raw))
@@ -226,7 +231,7 @@ def formulario():
                 try:
                     foto_path = os.path.join(
                         "temp",
-                        f"foto_tec{i}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg",
+                        f"foto_tec{i}_{req_uuid}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg",
                     )
                     foto_file.save(foto_path)
                     fila["foto_path"] = foto_path
@@ -269,7 +274,7 @@ def formulario():
             try:
                 foto_path = os.path.join(
                     "temp",
-                    f"foto_general_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg",
+                    f"foto_general_{req_uuid}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg",
                 )
                 foto_general.save(foto_path)
                 data["foto_path"] = foto_path
@@ -309,38 +314,56 @@ def formulario():
         except Exception as e:
             print("Error subiendo PDF a Supabase Storage:", e)
 
-        # ===== Registrar ATS diario en tabla resumen =====
+        # ===== Validar subida y registrar en BD =====
+        if not pdf_public_url:
+            mensaje = "❌ Error al subir el PDF a la nube. Por favor, reintente."
+        else:
+            try:
+                fecha_reg = data.get("fecha_dia") or datetime.now().strftime("%Y-%m-%d")
+                brigada_reg = data.get("brigada") or "SIN BRIGADA"
+                zona_reg = data.get("zona_usuario")
+                contrata_reg = data.get("contrata")
+                usuario_reg = data.get("usuario_registro")
+                supervisor_reg = data.get("supervisor")
+                tecnicos_count = len(tecnicos_post)
+
+                registro = {
+                    "fecha": fecha_reg,
+                    "brigada": brigada_reg,
+                    "zona": zona_reg,
+                    "contrata": contrata_reg,
+                    "usuario_registro": usuario_reg,
+                    "supervisor": supervisor_reg,
+                    "tecnicos_count": tecnicos_count,
+                    "completado": True,
+                    "pdf_path": pdf_storage_path,
+                    "pdf_url": pdf_public_url,
+                }
+
+                supabase.table("ats_registros_diarios").upsert(
+                    registro,
+                    on_conflict="fecha,brigada,contrata",
+                ).execute()
+                mensaje = "✅ Reporte ATS generado y registrado correctamente."
+            except Exception as e:
+                print("Error registrando ATS diario en Supabase:", e)
+                mensaje = "⚠️ El PDF se generó, pero hubo un error al registrar en la base de datos."
+
+        # ===== Limpieza de Archivos =====
         try:
-            fecha_reg = data.get("fecha_dia") or datetime.now().strftime("%Y-%m-%d")
-            brigada_reg = data.get("brigada") or "SIN BRIGADA"
-            zona_reg = data.get("zona_usuario")
-            contrata_reg = data.get("contrata")
-            usuario_reg = data.get("usuario_registro")
-            supervisor_reg = data.get("supervisor")
-            tecnicos_count = len(tecnicos_post)
-
-            registro = {
-                "fecha": fecha_reg,
-                "brigada": brigada_reg,
-                "zona": zona_reg,
-                "contrata": contrata_reg,
-                "usuario_registro": usuario_reg,
-                "supervisor": supervisor_reg,
-                "tecnicos_count": tecnicos_count,
-                "completado": True,
-                "pdf_path": pdf_storage_path,
-                "pdf_url": pdf_public_url,
-            }
-
-            supabase.table("ats_registros_diarios").upsert(
-                registro,
-                on_conflict="fecha,brigada,contrata",
-            ).execute()
-        except Exception as e:
-            print("Error registrando ATS diario en Supabase:", e)
-
-        # ===== Mensaje en la plataforma =====
-        mensaje = "✅ Reporte ATS generado y registrado correctamente."
+            if data.get("foto_path") and os.path.exists(data.get("foto_path")):
+                os.remove(data["foto_path"])
+            for t in tecnicos_post:
+                f = t.get("firma_path")
+                if f and os.path.exists(f):
+                    os.remove(f)
+                ft = t.get("foto_path")
+                if ft and os.path.exists(ft):
+                    os.remove(ft)
+            if pdf_path and os.path.exists(pdf_path):
+                os.remove(pdf_path)
+        except Exception as cleanup_err:
+            print("Error en limpieza de archivos:", cleanup_err)
 
         return render_template(
             "formulario.html",

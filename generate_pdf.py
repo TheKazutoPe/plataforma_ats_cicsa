@@ -32,7 +32,13 @@ def P(text, bold=False, size=7, align="CENTER", color=colors.black, nowrap=False
 
 
 def IMG(path, w, h):
-    return Image(path, width=w, height=h) if path and os.path.exists(path) else ""
+    if not path or not os.path.exists(path):
+        return ""
+    try:
+        return Image(path, width=w, height=h)
+    except Exception as e:
+        print(f"Error cargando imagen en PDF: {e}")
+        return ""
 
 
 def vertical_label(text):
@@ -64,7 +70,7 @@ def vertical_label(text):
 # ========= Generar PDF =========
 
 def generar_pdf(data: dict) -> str:
-    filename = f"ATS_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    filename = data.get("pdf_filename") or f"ATS_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
 
     AZUL = colors.HexColor("#002b5c")
     GRIS = colors.HexColor("#f2f3f5")
@@ -675,18 +681,6 @@ def generar_pdf(data: dict) -> str:
     # Construir PDF
     doc.build(story)
 
-    # Limpieza temporales
-    try:
-        if foto_general and os.path.exists(foto_general):
-            os.remove(foto_general)
-        for t in tecnicos:
-            f = t.get("firma_path")
-            if f and os.path.exists(f):
-                os.remove(f)
-            ft = t.get("foto_path")
-            if ft and os.path.exists(ft):
-                os.remove(ft)
-    except Exception:
-        pass
+    # La limpieza de archivos temporales se centraliza ahora en main.py
 
     return filename
