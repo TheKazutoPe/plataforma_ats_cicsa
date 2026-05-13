@@ -5,6 +5,7 @@ from datetime import datetime
 import base64
 import os
 import uuid
+import unicodedata
 
 from generate_pdf import generar_pdf
 
@@ -296,8 +297,11 @@ def formulario():
                 fecha_reg = data.get("fecha_dia") or datetime.now().strftime("%Y-%m-%d")
                 brigada_reg = (data.get("brigada") or "SIN_BRIGADA").replace(" ", "_")
 
+                # Limpiar caracteres especiales (ej: Ñ, tildes) para la ruta de storage
+                brigada_safe = unicodedata.normalize('NFKD', brigada_reg).encode('ASCII', 'ignore').decode('utf-8')
+
                 # Ruta dentro del bucket
-                pdf_storage_path = f"ats/{fecha_reg}/{brigada_reg}/{pdf_name}"
+                pdf_storage_path = f"ats/{fecha_reg}/{brigada_safe}/{pdf_name}"
 
                 # Subir al bucket configurado con content-type correcto
                 supabase.storage.from_(PDF_BUCKET).upload(
@@ -371,6 +375,7 @@ def formulario():
             tecnicos=tecnicos,
             charlas=charlas,
             mensaje=mensaje,
+            pdf_url=pdf_public_url,
         )
 
     # GET
@@ -380,6 +385,7 @@ def formulario():
         tecnicos=tecnicos,
         charlas=charlas,
         mensaje=None,
+        pdf_url=None,
     )
 
 
