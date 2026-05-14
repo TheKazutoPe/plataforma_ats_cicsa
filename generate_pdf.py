@@ -70,7 +70,10 @@ def vertical_label(text):
 # ========= Generar PDF =========
 
 def generar_pdf(data: dict) -> str:
-    filename = data.get("pdf_filename") or f"ATS_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    raw_filename = data.get("pdf_filename") or f"ATS_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    # Siempre guardar en temp/ para que main.py pueda encontrarlo y limpiarlo
+    os.makedirs("temp", exist_ok=True)
+    filename = os.path.join("temp", os.path.basename(raw_filename))
 
     AZUL = colors.HexColor("#002b5c")
     GRIS = colors.HexColor("#f2f3f5")
@@ -681,6 +684,5 @@ def generar_pdf(data: dict) -> str:
     # Construir PDF
     doc.build(story)
 
-    # La limpieza de archivos temporales se centraliza ahora en main.py
-
+    # La limpieza de archivos temporales se centraliza en main.py
     return filename

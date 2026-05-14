@@ -125,9 +125,10 @@ def formulario():
         os.makedirs("temp", exist_ok=True)
         data = {}
 
-        # ===== UUID Global para evitar colisiones =====
+        # UUID solo para el nombre base del archivo
         req_uuid = uuid.uuid4().hex[:8]
-        data["pdf_filename"] = f"ATS_{req_uuid}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        pdf_base_name = f"ATS_{req_uuid}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        data["pdf_filename"] = pdf_base_name  # generate_pdf construirá la ruta temp/ internamente
 
         # ===== Datos generales =====
         data["fecha_dia"] = request.form.get("fecha_dia") or datetime.now().strftime(
@@ -284,7 +285,7 @@ def formulario():
 
         # ===== Generar PDF =====
         pdf_path = generar_pdf(data)
-        pdf_name = os.path.basename(pdf_path)
+        pdf_name = os.path.basename(pdf_path)  # solo el nombre, sin ruta temp/
 
         # ===== Subir PDF a Supabase Storage =====
         pdf_storage_path = None

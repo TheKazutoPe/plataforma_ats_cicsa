@@ -310,18 +310,34 @@
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(5px);
+      background: rgba(0, 51, 102, 0.88);
+      backdrop-filter: blur(6px);
       z-index: 9999;
       justify-content: center;
       align-items: center;
       flex-direction: column;
       color: white;
+      text-align: center;
+      padding: 20px;
     }
-    .spinner-border {
+    #loading-overlay .spinner-border {
       width: 3rem; height: 3rem;
       border-width: 0.25em;
       margin-bottom: 15px;
+    }
+    #loading-overlay .loader-msg {
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      margin-top: 6px;
+    }
+    #loading-overlay .loader-cancel {
+      margin-top: 20px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      cursor: pointer;
+      text-decoration: underline;
+      background: none;
+      border: none;
     }
 
     /* Success Modal Overlay */
@@ -408,8 +424,10 @@
 <!-- Loading Overlay -->
 <div id="loading-overlay">
   <div class="spinner-border text-light" role="status"></div>
-  <h5 class="fw-bold">Generando ATS y subiendo a la nube...</h5>
-  <p class="text-white-50 text-center px-4" style="font-size: 13px;">Por favor, no cierres esta pantalla.</p>
+  <h5 class="fw-bold" id="loader-title">Generando ATS y subiendo a la nube...</h5>
+  <p class="loader-msg">Por favor, no cierres esta pantalla.</p>
+  <p class="loader-msg" id="loader-step">Procesando firmas y fotos...</p>
+  <button class="loader-cancel" id="loader-cancel-btn" style="display:none" onclick="hideLoader()">Si esto tarda demasiado, toca aquí para cancelar</button>
 </div>
 <div class="ats-wrapper">
   <div class="card-ats">
@@ -819,6 +837,7 @@
     canvas.addEventListener("touchmove", move, { passive: false });
     canvas.addEventListener("touchend", end);
 
+    // Capturar firma antes del submit (solo captura, NO activa el overlay aquí)
     document.getElementById("formATS").addEventListener("submit", function () {
       if (!hidden.value) {
         hidden.value = canvas.toDataURL("image/png");
@@ -856,12 +875,47 @@
   window.clearSig = clearSig;
   window.previewFotoTec = previewFotoTec;
 
-  // Loading overlay al enviar
+  // ─── Loading overlay al enviar ───────────────────────────────────────────────
+  let loaderTimeout = null;
+
+  function showLoader() {
+    const loader = document.getElementById("loading-overlay");
+    if (loader) loader.style.display = "flex";
+
+    // Paso 1 → mensaje inicial
+    const stepEl = document.getElementById("loader-step");
+    const titleEl = document.getElementById("loader-title");
+
+    // Actualizar mensajes por etapa
+    setTimeout(() => { if (stepEl) stepEl.textContent = "Generando PDF..."; }, 2000);
+    setTimeout(() => { if (stepEl) stepEl.textContent = "Subiendo a la nube..."; }, 6000);
+    setTimeout(() => { if (stepEl) stepEl.textContent = "Registrando en base de datos..."; }, 12000);
+
+    // Mostrar botón de cancelar a los 20s
+    setTimeout(() => {
+      const cancelBtn = document.getElementById("loader-cancel-btn");
+      if (cancelBtn) cancelBtn.style.display = "inline";
+    }, 20000);
+
+    // Timeout de seguridad: 90s → ocultar overlay y avisar
+    loaderTimeout = setTimeout(() => {
+      hideLoader();
+      if (titleEl) titleEl.textContent = "⚠️ La operación tardó demasiado";
+      alert("El servidor tardó más de lo esperado. Por favor vuelve a intentarlo o verifica tu conexión a internet.");
+    }, 90000);
+  }
+
+  function hideLoader() {
+    const loader = document.getElementById("loading-overlay");
+    if (loader) loader.style.display = "none";
+    if (loaderTimeout) { clearTimeout(loaderTimeout); loaderTimeout = null; }
+  }
+
   const mainForm = document.getElementById("formATS");
   if (mainForm) {
-    mainForm.addEventListener("submit", function() {
-      const loader = document.getElementById("loading-overlay");
-      if (loader) loader.style.display = "flex";
+    mainForm.addEventListener("submit", function(e) {
+      // Pequeño delay para que los listeners de firma capturen primero
+      setTimeout(showLoader, 50);
     });
   }
 
