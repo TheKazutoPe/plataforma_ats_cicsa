@@ -283,6 +283,22 @@ def formulario():
             except Exception as e:
                 print("Error guardando foto general:", e)
 
+        # ===== Firma del Supervisor =====
+        sup_firma_b64 = request.form.get("firma_supervisor")
+        data["supervisor_firma_path"] = None
+        if sup_firma_b64 and "base64" in sup_firma_b64:
+            try:
+                raw_sup = sup_firma_b64.split(",")[-1]
+                sup_firma_path = os.path.join(
+                    "temp",
+                    f"firma_sup_{req_uuid}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png",
+                )
+                with open(sup_firma_path, "wb") as out:
+                    out.write(base64.b64decode(raw_sup))
+                data["supervisor_firma_path"] = sup_firma_path
+            except Exception as e:
+                print("Error guardando firma supervisor:", e)
+
         # ===== Generar PDF =====
         pdf_path = generar_pdf(data)
         pdf_name = os.path.basename(pdf_path)  # solo el nombre, sin ruta temp/
@@ -365,7 +381,11 @@ def formulario():
                 ft = t.get("foto_path")
                 if ft and os.path.exists(ft):
                     os.remove(ft)
-            # Limpiar la copia temporal de firma del encargado (_enc.png)
+            # Limpiar firma del supervisor
+            sup_copy = data.get("supervisor_firma_path")
+            if sup_copy and os.path.exists(sup_copy):
+                os.remove(sup_copy)
+            # Limpiar la copia temporal de firma del encargado (_enc.png) si existiera
             enc_copy = data.get("_enc_sig_copy")
             if enc_copy and os.path.exists(enc_copy):
                 os.remove(enc_copy)

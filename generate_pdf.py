@@ -10,10 +10,11 @@ from reportlab.platypus import (
     Image,
 )
 from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.utils import ImageReader
 from datetime import datetime
 import os
 import html
-import shutil
+import io
 
 
 # ========= Helpers =========
@@ -33,10 +34,15 @@ def P(text, bold=False, size=7, align="CENTER", color=colors.black, nowrap=False
 
 
 def IMG(path, w, h):
+    """Carga una imagen desde disco usando BytesIO para evitar el cache
+    interno de ReportLab por ruta de archivo, que causaba imagenes duplicadas
+    flotantes cuando el mismo PNG se usaba en mas de un lugar del story."""
     if not path or not os.path.exists(path):
         return ""
     try:
-        return Image(path, width=w, height=h)
+        with open(path, "rb") as fh:
+            data = fh.read()
+        return Image(ImageReader(io.BytesIO(data)), width=w, height=h)
     except Exception as e:
         print(f"Error cargando imagen en PDF: {e}")
         return ""
@@ -572,23 +578,13 @@ def generar_pdf(data: dict) -> str:
 
     enc_sig = P("")
     enc_name = ""
-    enc_sig_copy_path = None  # ruta de la copia temporal para evitar duplicado en ReportLab
     if encargado:
         enc_name = (encargado.get("nombre") or "").strip()
         fp = encargado.get("firma_path")
         if fp and os.path.exists(fp):
-            # Crear una copia del archivo de firma para el bloque del encargado.
-            # ReportLab cachea internamente las imágenes por ruta de archivo;
-            # si la misma ruta se usa dos veces (tabla_part + enc_cell),
-            # puede renderizar un elemento flotante extra al final del PDF.
-            enc_sig_copy_path = fp.replace(".png", "_enc.png")
-            try:
-                shutil.copy2(fp, enc_sig_copy_path)
-            except Exception:
-                enc_sig_copy_path = fp  # fallback: usar el mismo si la copia falla
-            enc_sig = IMG(enc_sig_copy_path, 6.4 * cm, 2.0 * cm)
-    # Registrar la copia para que main.py la limpie
-    data["_enc_sig_copy"] = enc_sig_copy_path
+            enc_sig = IMG(fp, 6.4 * cm, 2.0 * cm)
+    # Ya no se necesita copia temporal; limpiar cualquier _enc.png residual
+    data["_enc_sig_copy"] = None
 
     enc_cell = Table(
         [[enc_sig], [P(enc_name or "", False, 7, "CENTER")]],
@@ -608,9 +604,33 @@ def generar_pdf(data: dict) -> str:
         )
     )
 
+    # ── Celda supervisor (derecha) ──────────────────────────────────────────
+    sup_firma_path = data.get("supervisor_firma_path")
+    sup_sig = P("")
+    if sup_firma_path and os.path.exists(sup_firma_path):
+        sup_sig = IMG(sup_firma_path, 6.4 * cm, 2.0 * cm)
+
+    sup_cell = Table(
+        [[sup_sig], [P(data.get("supervisor", ""), False, 7, "CENTER")]],
+        colWidths=[13.85 * cm],
+        rowHeights=[2.4 * cm, 0.6 * cm],
+    )
+    sup_cell.setStyle(
+        TableStyle(
+            [
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
+        )
+    )
+
     firmas = Table(
         [
-            [enc_cell, ""],
+            [enc_cell, sup_cell],
             [
                 P("Encargado de CONTRATA/ CICSA PERU", True, 7, "CENTER", AZUL, True),
                 P("Jefe de Obra /Supervisor CONTRATA/ CICSA PERU", True, 7, "CENTER", AZUL, True),
