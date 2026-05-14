@@ -365,6 +365,10 @@ def formulario():
                 ft = t.get("foto_path")
                 if ft and os.path.exists(ft):
                     os.remove(ft)
+            # Limpiar la copia temporal de firma del encargado (_enc.png)
+            enc_copy = data.get("_enc_sig_copy")
+            if enc_copy and os.path.exists(enc_copy):
+                os.remove(enc_copy)
             if pdf_path and os.path.exists(pdf_path):
                 os.remove(pdf_path)
         except Exception as cleanup_err:

@@ -13,6 +13,7 @@ from reportlab.lib.styles import ParagraphStyle
 from datetime import datetime
 import os
 import html
+import shutil
 
 
 # ========= Helpers =========
@@ -571,11 +572,23 @@ def generar_pdf(data: dict) -> str:
 
     enc_sig = P("")
     enc_name = ""
+    enc_sig_copy_path = None  # ruta de la copia temporal para evitar duplicado en ReportLab
     if encargado:
         enc_name = (encargado.get("nombre") or "").strip()
         fp = encargado.get("firma_path")
         if fp and os.path.exists(fp):
-            enc_sig = IMG(fp, 6.4 * cm, 2.0 * cm)
+            # Crear una copia del archivo de firma para el bloque del encargado.
+            # ReportLab cachea internamente las imágenes por ruta de archivo;
+            # si la misma ruta se usa dos veces (tabla_part + enc_cell),
+            # puede renderizar un elemento flotante extra al final del PDF.
+            enc_sig_copy_path = fp.replace(".png", "_enc.png")
+            try:
+                shutil.copy2(fp, enc_sig_copy_path)
+            except Exception:
+                enc_sig_copy_path = fp  # fallback: usar el mismo si la copia falla
+            enc_sig = IMG(enc_sig_copy_path, 6.4 * cm, 2.0 * cm)
+    # Registrar la copia para que main.py la limpie
+    data["_enc_sig_copy"] = enc_sig_copy_path
 
     enc_cell = Table(
         [[enc_sig], [P(enc_name or "", False, 7, "CENTER")]],
