@@ -540,7 +540,7 @@
       </div>
 
       <!-- SUPERVISOR -->
-      <div class="section-label"><span class="icon"></span>Supervisor / Jefe de Obra CICSA</div>
+      <div class="section-label"><span class="icon"></span>Supervisor CICSA</div>
       <div class="row g-2 mb-1">
         <div class="col-12 col-md-6">
           <label for="supervisor" class="form-label">Seleccione Supervisor</label>
@@ -555,19 +555,6 @@
             <option>LENIN RODRIGUEZ</option>
           </select>
           <div class="hint">Se usará para el envío automático del reporte.</div>
-        </div>
-      </div>
-
-      <!-- FIRMA SUPERVISOR -->
-      <div class="row g-2 mb-2">
-        <div class="col-12 col-md-8">
-          <label class="form-label">Firma del Supervisor / Jefe de Obra <span style="color:#ff6600;font-size:11px;">(requerida)</span></label>
-          <canvas id="sigSup" class="sig"></canvas>
-          <div class="hint">El supervisor debe firmar aquí. Aparecerá en el PDF en "Jefe de Obra/Supervisor CONTRATA/CICSA PERU".</div>
-          <input type="hidden" name="firma_supervisor" id="firma_supervisor">
-          <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="clearSigSup()">
-            Borrar firma supervisor
-          </button>
         </div>
       </div>
 
@@ -881,74 +868,11 @@
     }
   }
 
-  // Inicializar firmas de técnicos
+  // Inicializar firmas
   [1, 2, 3].forEach(setupSig);
-
-  // ─── Canvas firma Supervisor ───────────────────────────────────────────────
-  (function setupSigSup() {
-    const canvas = document.getElementById("sigSup");
-    const hidden = document.getElementById("firma_supervisor");
-    if (!canvas || !hidden) return;
-    const ctx = canvas.getContext("2d");
-
-    function initCanvas() {
-      const ratio = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      const width = Math.max(260, rect.width) * ratio;
-      const height = 140 * ratio;
-      canvas.width = width;
-      canvas.height = height;
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-      ctx.lineWidth = 2;
-      ctx.lineCap = "round";
-      ctx.strokeStyle = "#000";
-    }
-    initCanvas();
-
-    let drawing = false, lastX = 0, lastY = 0;
-    function getPos(e) {
-      const rect = canvas.getBoundingClientRect();
-      const touch = e.touches ? e.touches[0] : null;
-      return {
-        x: (touch ? touch.clientX : e.clientX) - rect.left,
-        y: (touch ? touch.clientY : e.clientY) - rect.top
-      };
-    }
-    function start(e) { e.preventDefault(); drawing = true; const p = getPos(e); lastX = p.x; lastY = p.y; }
-    function move(e) {
-      if (!drawing) return;
-      e.preventDefault();
-      const p = getPos(e);
-      ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke();
-      lastX = p.x; lastY = p.y;
-    }
-    function end() { if (!drawing) return; drawing = false; hidden.value = canvas.toDataURL("image/png"); }
-
-    canvas.addEventListener("mousedown", start);
-    canvas.addEventListener("mousemove", move);
-    canvas.addEventListener("mouseup", end);
-    canvas.addEventListener("mouseleave", end);
-    canvas.addEventListener("touchstart", start, { passive: false });
-    canvas.addEventListener("touchmove", move, { passive: false });
-    canvas.addEventListener("touchend", end);
-
-    // Capturar al submit
-    document.getElementById("formATS").addEventListener("submit", function () {
-      if (!hidden.value) hidden.value = canvas.toDataURL("image/png");
-    });
-  })();
-
-  function clearSigSup() {
-    const c = document.getElementById("sigSup");
-    const h = document.getElementById("firma_supervisor");
-    if (!c || !h) return;
-    c.getContext("2d").clearRect(0, 0, c.width, c.height);
-    h.value = "";
-  }
 
   // Exponer funciones usadas en HTML
   window.clearSig = clearSig;
-  window.clearSigSup = clearSigSup;
   window.previewFotoTec = previewFotoTec;
 
   // ─── Loading overlay al enviar ───────────────────────────────────────────────
