@@ -6,8 +6,25 @@ import base64
 import os
 import uuid
 import unicodedata
+from PIL import Image as PILImage, ImageOps
 
 from generate_pdf import generar_pdf
+
+def procesar_y_guardar_imagen(file_storage, save_path, max_size=(800, 800)):
+    try:
+        img = PILImage.open(file_storage)
+        img = ImageOps.exif_transpose(img) # Fix EXIF rotation from mobile cameras
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        img.thumbnail(max_size, PILImage.Resampling.LANCZOS)
+        img.save(save_path, "JPEG", quality=85)
+        return True
+    except Exception as e:
+        print("Error procesando imagen:", e)
+        # Fallback to direct save if PIL fails
+        file_storage.seek(0)
+        file_storage.save(save_path)
+        return False
 
 # =========================
 # CONFIGURACION BASE
@@ -235,7 +252,7 @@ def formulario():
                         "temp",
                         f"foto_tec{i}_{req_uuid}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg",
                     )
-                    foto_file.save(foto_path)
+                    procesar_y_guardar_imagen(foto_file, foto_path)
                     fila["foto_path"] = foto_path
                 except Exception as e:
                     print(f"Error guardando foto tecnico {i}:", e)
@@ -278,7 +295,7 @@ def formulario():
                     "temp",
                     f"foto_general_{req_uuid}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg",
                 )
-                foto_general.save(foto_path)
+                procesar_y_guardar_imagen(foto_general, foto_path)
                 data["foto_path"] = foto_path
             except Exception as e:
                 print("Error guardando foto general:", e)
